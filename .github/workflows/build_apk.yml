@@ -1,0 +1,68 @@
+name: Build BusinessOS APK
+
+# Push this repo to GitHub (or click "Run workflow" manually) and this will
+# produce a real, installable APK under the run's "Artifacts" section -
+# no local Flutter/Android Studio installation required on your machine.
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Scaffold Android platform files (matches installed Flutter/Gradle versions)
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create --platforms=android --org com.businessos --project-name businessos temp_scaffold
+            cp -r temp_scaffold/android ./android
+            rm -rf temp_scaffold
+          fi
+
+      - name: Enable biometric unlock support (local_auth needs a FragmentActivity)
+        run: |
+          MAIN_ACTIVITY=$(find android/app/src/main -name "MainActivity.kt" | head -n 1)
+          if [ -n "$MAIN_ACTIVITY" ]; then
+            sed -i 's/FlutterActivity/FlutterFragmentActivity/g' "$MAIN_ACTIVITY"
+          fi
+
+      - name: Add USE_BIOMETRIC permission
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          grep -q "USE_BIOMETRIC" "$MANIFEST" || \
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' "$MANIFEST"
+
+      - name: Get Flutter/Dart dependencies
+        run: flutter pub get
+
+      - name: Generate local database code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos || true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build app bundle (for Play Store - still needs your own signing key, see README)
+        run: flutter build appbundle --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: businessos-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: businessos-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
