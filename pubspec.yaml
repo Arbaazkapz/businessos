@@ -1,0 +1,63 @@
+name: businessos
+description: "Offline-first business management app for Indian shopkeepers. Your Shop. Your Data. Always Available."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management (classic Riverpod - no code generation required)
+  flutter_riverpod: ^2.5.1
+
+  # Local database - fully offline SQLite via Drift
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Formatting (currency / date, India locale)
+  intl: ^0.19.0
+
+  # Invoice PDF generation, preview, print & share
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+  # Sharing arbitrary files (encrypted backup export)
+  share_plus: ^9.0.0
+
+  # Picking a file to restore from (backup import)
+  file_picker: ^8.0.6
+
+  # Security: PIN storage + biometric/face unlock
+  flutter_secure_storage: ^9.2.2
+  local_auth: ^2.3.0
+
+  # AES encryption for local backup files
+  encrypt: ^5.0.3
+  crypto: ^3.0.3
+
+  # Unique IDs for offline-generated records (no server needed)
+  uuid: ^4.4.2
+
+  # Lightweight persisted settings (theme mode etc.) - not for secrets
+  shared_preferences: ^2.3.2
+
+  # Dashboard charts
+  fl_chart: ^0.68.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.11
+  drift_dev: ^2.20.0
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/
