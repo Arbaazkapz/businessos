@@ -150,10 +150,10 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Future<void> _save() async {
-    final validLines = _lines.where((l) => l.descriptionCtrl.text.trim().isNotEmpty && l.qty > 0).toList();
+    final validLines = _lines.where((l) => l.qty > 0 && l.unitPrice > 0).toList();
     if (validLines.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Add at least one line item')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Add at least one item with a quantity and a unit price')));
       return;
     }
     if (_status != InvoiceStatus.paid && _customerId == null) {
@@ -168,11 +168,15 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             customerId: _customerId,
             customerNameSnapshot: _customerName,
             lines: validLines
-                .map((l) => InvoiceLineInput(
-                      description: l.descriptionCtrl.text.trim(),
-                      qty: l.qty,
-                      unitPrice: l.unitPrice,
-                      productId: l.productId,
+                .asMap()
+                .entries
+                .map((entry) => InvoiceLineInput(
+                      description: entry.value.descriptionCtrl.text.trim().isEmpty
+                          ? 'Item ${entry.key + 1}'
+                          : entry.value.descriptionCtrl.text.trim(),
+                      qty: entry.value.qty,
+                      unitPrice: entry.value.unitPrice,
+                      productId: entry.value.productId,
                     ))
                 .toList(),
             discount: _discount,
@@ -189,7 +193,6 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
