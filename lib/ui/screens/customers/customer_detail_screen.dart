@@ -29,39 +29,43 @@ class CustomerDetailScreen extends ConsumerWidget {
     if (customer == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    final Customer safeCustomer = customer;
 
     final entries = ledgerAsync.valueOrNull ?? const <LedgerEntry>[];
     final balance = LedgerRepository.balanceOf(entries);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer.name),
+        title: Text(safeCustomer.name),
         actions: [
           IconButton(
-            icon: Icon(customer.isFavourite ? Icons.star_rounded : Icons.star_outline_rounded),
-            color: customer.isFavourite ? Colors.amber : null,
+            icon: Icon(
+                safeCustomer.isFavourite ? Icons.star_rounded : Icons.star_outline_rounded),
+            color: safeCustomer.isFavourite ? Colors.amber : null,
             onPressed: () => ref
                 .read(customerRepositoryProvider)
-                .update(customer.id, isFavourite: !customer.isFavourite),
+                .update(safeCustomer.id, isFavourite: !safeCustomer.isFavourite),
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
               if (value == 'edit') {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => AddEditCustomerScreen(existing: customer)));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AddEditCustomerScreen(existing: safeCustomer)));
               } else if (value == 'block') {
                 await ref
                     .read(customerRepositoryProvider)
-                    .update(customer.id, isBlocked: !customer.isBlocked);
+                    .update(safeCustomer.id, isBlocked: !safeCustomer.isBlocked);
               } else if (value == 'delete') {
                 final ok = await confirmDialog(
                   context,
                   title: 'Delete customer?',
                   message:
-                      'This removes ${customer.name} and cannot be undone. Ledger history for this customer will remain orphaned.',
+                      'This removes ${safeCustomer.name} and cannot be undone. Ledger history for this customer will remain orphaned.',
                 );
                 if (ok) {
-                  await ref.read(customerRepositoryProvider).delete(customer.id);
+                  await ref.read(customerRepositoryProvider).delete(safeCustomer.id);
                   if (context.mounted) Navigator.pop(context);
                 }
               }
@@ -70,7 +74,8 @@ class CustomerDetailScreen extends ConsumerWidget {
               const PopupMenuItem(value: 'edit', child: Text('Edit customer')),
               PopupMenuItem(
                   value: 'block',
-                  child: Text(customer.isBlocked ? 'Unblock customer' : 'Block customer')),
+                  child:
+                      Text(safeCustomer.isBlocked ? 'Unblock customer' : 'Block customer')),
               const PopupMenuItem(value: 'delete', child: Text('Delete customer')),
             ],
           ),
@@ -79,7 +84,7 @@ class CustomerDetailScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => AddLedgerEntryScreen(customerId: customer.id)),
+          MaterialPageRoute(builder: (_) => AddLedgerEntryScreen(customerId: safeCustomer.id)),
         ),
         icon: const Icon(Icons.add),
         label: const Text('Add Entry'),
@@ -111,18 +116,20 @@ class CustomerDetailScreen extends ConsumerWidget {
                               : (balance < 0 ? Colors.green.shade700 : null),
                         ),
                   ),
-                  if (customer.phone.isNotEmpty || customer.address.isNotEmpty) ...[
+                  if (safeCustomer.phone.isNotEmpty || safeCustomer.address.isNotEmpty) ...[
                     const Divider(height: 28),
-                    if (customer.phone.isNotEmpty)
-                      _InfoRow(icon: Icons.call_outlined, text: customer.phone),
-                    if (customer.address.isNotEmpty)
-                      _InfoRow(icon: Icons.location_on_outlined, text: customer.address),
-                    if (customer.gstNumber != null)
-                      _InfoRow(icon: Icons.badge_outlined, text: 'GST: ${customer.gstNumber}'),
-                    if (customer.creditLimit != null)
+                    if (safeCustomer.phone.isNotEmpty)
+                      _InfoRow(icon: Icons.call_outlined, text: safeCustomer.phone),
+                    if (safeCustomer.address.isNotEmpty)
+                      _InfoRow(icon: Icons.location_on_outlined, text: safeCustomer.address),
+                    if (safeCustomer.gstNumber != null)
+                      _InfoRow(
+                          icon: Icons.badge_outlined, text: 'GST: ${safeCustomer.gstNumber}'),
+                    if (safeCustomer.creditLimit != null)
                       _InfoRow(
                           icon: Icons.speed_outlined,
-                          text: 'Credit limit: ${AppFormatters.money(customer.creditLimit!)}'),
+                          text:
+                              'Credit limit: ${AppFormatters.money(safeCustomer.creditLimit!)}'),
                   ],
                 ],
               ),
