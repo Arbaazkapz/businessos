@@ -44,11 +44,11 @@ jobs:
         run: |
           GRADLE_KTS="android/app/build.gradle.kts"
           GRADLE_GROOVY="android/app/build.gradle"
-          if [ -f "$GRADLE_KTS" ]; then
-            sed -i -E 's/^([[:space:]]*)compileSdk[[:space:]]*=.*/\1compileSdk = 36/' "$GRADLE_KTS"
-          elif [ -f "$GRADLE_GROOVY" ]; then
-            sed -i -E 's/^([[:space:]]*)compileSdkVersion[[:space:]]+.*/\1compileSdkVersion 36/' "$GRADLE_GROOVY"
-          fi
+          for f in "$GRADLE_KTS" "$GRADLE_GROOVY"; do
+            if [ -f "$f" ]; then
+              sed -i -E 's/^([[:space:]]*)compileSdk(Version)?[[:space:]]*=?[[:space:]]*.+$/\1compileSdk = 36/' "$f"
+            fi
+          done
 
       - name: Get Flutter/Dart dependencies
         run: flutter pub get
@@ -58,11 +58,14 @@ jobs:
           CACHE_ROOT="${PUB_CACHE:-$HOME/.pub-cache}/hosted/pub.dev"
           echo "Scanning $CACHE_ROOT for plugin Gradle files..."
           find "$CACHE_ROOT" -path "*/android/build.gradle" 2>/dev/null | while read -r f; do
-            echo "--- patching $f ---"
-            grep -n "compileSdkVersion" "$f" || true
-            sed -i -E 's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 36/' "$f"
-            sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/' "$f"
-            grep -n "compileSdkVersion" "$f" || true
+            BEFORE=$(grep -nE "compileSdk" "$f" || true)
+            sed -i -E 's/^([[:space:]]*)compileSdk(Version)?[[:space:]]*=?[[:space:]]*.+$/\1compileSdk = 36/' "$f"
+            AFTER=$(grep -nE "compileSdk" "$f" || true)
+            if [ -n "$BEFORE" ]; then
+              echo "--- $f ---"
+              echo "before: $BEFORE"
+              echo "after:  $AFTER"
+            fi
           done
 
       - name: Generate local database code (Drift)
