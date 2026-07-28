@@ -40,25 +40,30 @@ jobs:
           grep -q "USE_BIOMETRIC" "$MANIFEST" || \
             sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' "$MANIFEST"
 
-      - name: Bump compileSdk to 36 (file_picker's dependencies now require it)
+      - name: Bump compileSdk to 36 in our own app module
         run: |
           GRADLE_KTS="android/app/build.gradle.kts"
           GRADLE_GROOVY="android/app/build.gradle"
           if [ -f "$GRADLE_KTS" ]; then
-            echo "--- before ---"; grep -n "compileSdk" "$GRADLE_KTS" || true
             sed -i -E 's/^([[:space:]]*)compileSdk[[:space:]]*=.*/\1compileSdk = 36/' "$GRADLE_KTS"
-            echo "--- after ---"; grep -n "compileSdk" "$GRADLE_KTS" || true
           elif [ -f "$GRADLE_GROOVY" ]; then
-            echo "--- before ---"; grep -n "compileSdk" "$GRADLE_GROOVY" || true
             sed -i -E 's/^([[:space:]]*)compileSdkVersion[[:space:]]+.*/\1compileSdkVersion 36/' "$GRADLE_GROOVY"
-            echo "--- after ---"; grep -n "compileSdk" "$GRADLE_GROOVY" || true
-          else
-            echo "No app-level Gradle file found at expected path - listing android/app:"
-            find android/app -maxdepth 1 -type f
           fi
 
       - name: Get Flutter/Dart dependencies
         run: flutter pub get
+
+      - name: Bump compileSdk to 36 in every downloaded plugin (fixes file_picker AAR metadata errors)
+        run: |
+          CACHE_ROOT="${PUB_CACHE:-$HOME/.pub-cache}/hosted/pub.dev"
+          echo "Scanning $CACHE_ROOT for plugin Gradle files..."
+          find "$CACHE_ROOT" -path "*/android/build.gradle" 2>/dev/null | while read -r f; do
+            echo "--- patching $f ---"
+            grep -n "compileSdkVersion" "$f" || true
+            sed -i -E 's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 36/' "$f"
+            sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/' "$f"
+            grep -n "compileSdkVersion" "$f" || true
+          done
 
       - name: Generate local database code (Drift)
         run: dart run build_runner build --delete-conflicting-outputs
