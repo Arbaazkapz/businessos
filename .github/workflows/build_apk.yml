@@ -45,9 +45,16 @@ jobs:
           GRADLE_KTS="android/app/build.gradle.kts"
           GRADLE_GROOVY="android/app/build.gradle"
           if [ -f "$GRADLE_KTS" ]; then
-            sed -i 's/compileSdk = flutter\.compileSdkVersion/compileSdk = 36/' "$GRADLE_KTS"
+            echo "--- before ---"; grep -n "compileSdk" "$GRADLE_KTS" || true
+            sed -i -E 's/^([[:space:]]*)compileSdk[[:space:]]*=.*/\1compileSdk = 36/' "$GRADLE_KTS"
+            echo "--- after ---"; grep -n "compileSdk" "$GRADLE_KTS" || true
           elif [ -f "$GRADLE_GROOVY" ]; then
-            sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 36/' "$GRADLE_GROOVY"
+            echo "--- before ---"; grep -n "compileSdk" "$GRADLE_GROOVY" || true
+            sed -i -E 's/^([[:space:]]*)compileSdkVersion[[:space:]]+.*/\1compileSdkVersion 36/' "$GRADLE_GROOVY"
+            echo "--- after ---"; grep -n "compileSdk" "$GRADLE_GROOVY" || true
+          else
+            echo "No app-level Gradle file found at expected path - listing android/app:"
+            find android/app -maxdepth 1 -type f
           fi
 
       - name: Get Flutter/Dart dependencies
