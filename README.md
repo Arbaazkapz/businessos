@@ -148,14 +148,30 @@ A few things only you can/should do, deliberately not automated here:
 
 ### Troubleshooting
 
-Flutter's APIs move over time; if you're on a notably older or newer Flutter
-SDK than mid-2026 and hit a type error, the most likely spots are:
+**This project has already been through one real CI run and had two version
+conflicts fixed as a result** (share_plus/printing both needing incompatible
+versions of the `web` package, and the now-obsolete `sqlite3_flutter_libs`
+clashing with drift's own `sqlite3` dependency). If your build fails at
+`flutter pub get` with a message like `"Because X depends on Y and Z depends
+on W, version solving failed"`, that's pub telling you two packages need
+incompatible versions of a shared dependency - it always suggests a fix at
+the bottom of the error. The fastest general-purpose fix, if my pinned
+versions have drifted out of date by the time you build this:
+
+```bash
+flutter pub upgrade --major-versions
+dart run build_runner build --delete-conflicting-outputs
+```
+
+This tells pub to ignore my version pins and resolve every package to the
+newest set that's mutually compatible *right now*, which is more reliable
+than any specific version numbers I write today.
+
+Other spots Flutter's APIs move over time; if you're on a notably older or
+newer Flutter SDK than mid-2026 and hit a type error, check:
 
 - `CardThemeData` (in `lib/core/theme.dart`) → older SDKs may want `CardTheme`.
 - `DropdownButtonFormField(initialValue: ...)` → older SDKs may want `value:`.
-- If `flutter pub get` can't resolve a package version, run
-  `flutter pub upgrade --major-versions` to move every dependency to the
-  latest version compatible with your SDK, then re-run `build_runner`.
 
 ---
 
