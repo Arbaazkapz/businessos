@@ -241,10 +241,12 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     setState(() => _busy = true);
     try {
       final file = await ref.read(backupRepositoryProvider).exportEncrypted(passphrase: passphrase);
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'BusinessOS Backup',
-        text: 'BusinessOS encrypted backup - keep this file and your passphrase safe.',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'BusinessOS Backup',
+          text: 'BusinessOS encrypted backup - keep this file and your passphrase safe.',
+        ),
       );
     } catch (e) {
       if (mounted) {
