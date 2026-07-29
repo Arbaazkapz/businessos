@@ -42,6 +42,24 @@ by module rather than a shallow pass over everything.
 
 ---
 
+## Update log
+
+**v1.1** (this update): fixed the ₹ symbol rendering as a broken box in
+invoice PDFs (embedded a real Unicode font - see `assets/fonts/`); invoices
+now store and display the amount actually paid and balance due; fixed a real
+bug where paid invoices (including walk-in sales) weren't counted in
+"Today's Collections" at all; added drilldown screens for Today's
+Collections and Today's Credit Given; added success confirmations after
+every add/edit/delete action; fixed a UI bug where a snackbar could cover
+the primary button on the invoice and ledger-entry forms.
+
+This update includes a **database schema change** (adds an `amountPaid`
+column to invoices) with a safe migration - if you already installed a
+v1.0 build on a device, this update will upgrade its data in place rather
+than requiring a fresh install or losing data. Still, back up first via
+Settings → Backup & Restore before updating a device you care about, as
+good practice with any schema change.
+
 ## What's implemented (fully working, no mock data)
 
 - **No-login onboarding** - create your business profile once, start working.
