@@ -192,6 +192,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         );
       }
       if (!mounted) return;
+      showSuccessSnack(context, _isEditing ? 'Product updated' : 'Product added');
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -203,7 +204,10 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         title: 'Delete product?', message: 'This cannot be undone.');
     if (ok) {
       await ref.read(productRepositoryProvider).delete(widget.existing!.id);
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        showSuccessSnack(context, 'Product deleted');
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -220,7 +224,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
           children: [
             TextFormField(
               controller: _nameCtrl,

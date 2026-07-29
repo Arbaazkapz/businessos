@@ -66,7 +66,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                 );
                 if (ok) {
                   await ref.read(customerRepositoryProvider).delete(safeCustomer.id);
-                  if (context.mounted) Navigator.pop(context);
+                  if (context.mounted) {
+                    showSuccessSnack(context, 'Customer deleted');
+                    Navigator.pop(context);
+                  }
                 }
               }
             },
@@ -191,7 +194,10 @@ class _LedgerTile extends ConsumerWidget {
         title: 'Delete entry?',
         message: 'This ledger entry will be permanently removed.',
       ),
-      onDismissed: (_) => ref.read(ledgerRepositoryProvider).deleteEntry(entry.id),
+      onDismissed: (_) {
+        ref.read(ledgerRepositoryProvider).deleteEntry(entry.id);
+        showSuccessSnack(context, 'Entry deleted');
+      },
       child: Card(
         margin: const EdgeInsets.only(bottom: 8),
         child: ListTile(

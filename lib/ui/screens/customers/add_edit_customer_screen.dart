@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/app_database.dart';
 import '../../../providers/app_providers.dart';
+import '../../widgets/common_widgets.dart';
 
 class AddEditCustomerScreen extends ConsumerStatefulWidget {
   const AddEditCustomerScreen({super.key, this.existing});
@@ -75,6 +76,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
         );
       }
       if (!mounted) return;
+      showSuccessSnack(context, _isEditing ? 'Customer updated' : 'Customer added');
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -88,7 +90,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
           children: [
             TextFormField(
               controller: _nameCtrl,

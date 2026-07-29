@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/app_providers.dart';
+import '../widgets/common_widgets.dart';
 import 'main_shell.dart';
 
 class PinLockScreen extends ConsumerStatefulWidget {
@@ -143,6 +144,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     });
     await ref.read(authRepositoryProvider).setPin(_pinCtrl.text.trim());
     if (!mounted) return;
+    showSuccessSnack(context, 'PIN saved');
     Navigator.of(context).pop(true);
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/formatters.dart';
 import '../../../data/app_database.dart';
 import '../../../providers/app_providers.dart';
+import '../../widgets/common_widgets.dart';
 
 class AddLedgerEntryScreen extends ConsumerStatefulWidget {
   const AddLedgerEntryScreen({super.key, this.customerId});
@@ -64,6 +65,8 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
             entryDate: _date,
           );
       if (!mounted) return;
+      showSuccessSnack(
+          context, _type == LedgerEntryType.creditGiven ? 'Credit entry saved' : 'Payment recorded');
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -79,7 +82,7 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
           children: [
             if (widget.customerId == null)
               customersAsync.when(

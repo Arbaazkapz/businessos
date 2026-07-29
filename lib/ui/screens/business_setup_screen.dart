@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/app_database.dart';
 import '../../providers/app_providers.dart';
+import '../widgets/common_widgets.dart';
 import 'main_shell.dart';
 
 const _categories = [
@@ -82,6 +83,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           category: _category,
         );
         if (!mounted) return;
+        showSuccessSnack(context, 'Business profile updated');
         Navigator.of(context).pop();
       } else {
         await repo.createProfile(

@@ -5,6 +5,7 @@ import '../../../core/formatters.dart';
 import '../../../data/app_database.dart';
 import '../../../data/repositories.dart';
 import '../../../providers/app_providers.dart';
+import '../../widgets/common_widgets.dart';
 import 'invoice_preview_screen.dart';
 
 class _LineDraft {
@@ -187,18 +188,20 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             dueDate: _dueDate,
           );
       if (!mounted) return;
+      showSuccessSnack(context, 'Invoice created');
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: id)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('New Invoice')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
         children: [
           Card(
             child: ListTile(
@@ -218,7 +221,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   children: [
                     Row(
@@ -242,9 +245,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                           ),
                       ],
                     ),
+                    const SizedBox(height: 12),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
+                          flex: 3,
                           child: TextField(
                             controller: line.qtyCtrl,
                             decoration: const InputDecoration(labelText: 'Qty'),
@@ -254,20 +260,26 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
+                          flex: 4,
                           child: TextField(
                             controller: line.priceCtrl,
-                            decoration: const InputDecoration(labelText: 'Unit price', prefixText: '₹ '),
+                            decoration:
+                                const InputDecoration(labelText: 'Unit price', prefixText: '₹ '),
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
                         const SizedBox(width: 10),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            AppFormatters.money(line.lineTotal),
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                        Expanded(
+                          flex: 3,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              AppFormatters.money(line.lineTotal),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
                           ),
                         ),
                       ],

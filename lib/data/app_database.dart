@@ -98,6 +98,7 @@ class Invoices extends Table {
   RealColumn get discount => real().withDefault(const Constant(0))();
   RealColumn get taxPercent => real().withDefault(const Constant(0))();
   RealColumn get total => real()();
+  RealColumn get amountPaid => real().withDefault(const Constant(0))();
   TextColumn get status => textEnum<InvoiceStatus>()();
   TextColumn get notes => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -131,7 +132,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(invoices, invoices.amountPaid);
+          }
+        },
+      );
 
   static QueryExecutor _openConnection() {
     return LazyDatabase(() async {

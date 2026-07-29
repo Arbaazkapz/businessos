@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../providers/app_providers.dart';
+import '../../widgets/common_widgets.dart';
 import '../business_setup_screen.dart';
 import '../pin_screens.dart';
 
@@ -248,6 +249,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           text: 'BusinessOS encrypted backup - keep this file and your passphrase safe.',
         ),
       );
+      if (mounted) showSuccessSnack(context, 'Backup created');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup failed: $e')));

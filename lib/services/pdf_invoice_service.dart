@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -8,13 +9,27 @@ import '../data/app_database.dart';
 
 /// Builds a clean, professional invoice PDF entirely on-device - no server,
 /// no template download, works with zero internet connectivity.
+///
+/// IMPORTANT: the `pdf` package's built-in base-14 fonts (Helvetica etc.)
+/// do NOT contain a glyph for the Indian Rupee sign (₹, U+20B9) - it
+/// renders as a broken box. We embed Noto Sans (which does contain it) and
+/// make it the document's default font so every ₹ amount renders correctly.
 class PdfInvoiceService {
   static Future<Uint8List> build({
     required BusinessProfile business,
     required Invoice invoice,
     required List<InvoiceItem> items,
   }) async {
-    final doc = pw.Document();
+    final regularData = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
+    final boldData = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
+    final regularFont = pw.Font.ttf(regularData);
+    final boldFont = pw.Font.ttf(boldData);
+
+    final doc = pw.Document(
+      theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
+    );
+
+    final balanceDue = invoice.total - invoice.amountPaid;
 
     doc.addPage(
       pw.Page(
@@ -85,7 +100,7 @@ class PdfInvoiceService {
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.SizedBox(
-                  width: 220,
+                  width: 240,
                   child: pw.Column(
                     children: [
                       _totalsRow('Subtotal', invoice.subtotal),
@@ -94,13 +109,18 @@ class PdfInvoiceService {
                           invoice.total - (invoice.subtotal - invoice.discount)),
                       pw.Divider(),
                       _totalsRow('Total', invoice.total, bold: true),
+                      if (invoice.status != InvoiceStatus.paid) ...[
+                        pw.SizedBox(height: 4),
+                        _totalsRow('Amount Paid', invoice.amountPaid),
+                        _totalsRow('Balance Due', balanceDue,
+                            bold: true, color: PdfColors.red700),
+                      ],
                     ],
                   ),
                 ),
               ),
               pw.SizedBox(height: 20),
-              pw.Text('Status: ${invoice.status.name.toUpperCase()}',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              _statusBadge(invoice.status),
               if (invoice.notes.isNotEmpty) ...[
                 pw.SizedBox(height: 12),
                 pw.Text('Notes: ${invoice.notes}'),
@@ -121,6 +141,25 @@ class PdfInvoiceService {
     return doc.save();
   }
 
+  static pw.Widget _statusBadge(InvoiceStatus status) {
+    final (label, color) = switch (status) {
+      InvoiceStatus.paid => ('PAID', PdfColors.green700),
+      InvoiceStatus.partial => ('PARTIALLY PAID', PdfColors.orange700),
+      InvoiceStatus.unpaid => ('UNPAID', PdfColors.red700),
+    };
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: color, width: 1),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      child: pw.Text(
+        label,
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: color, fontSize: 12),
+      ),
+    );
+  }
+
   static pw.Widget _cell(String text, {bool bold = false}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(6),
@@ -129,16 +168,18 @@ class PdfInvoiceService {
     );
   }
 
-  static pw.Widget _totalsRow(String label, double value, {bool bold = false}) {
+  static pw.Widget _totalsRow(String label, double value, {bool bold = false, PdfColor? color}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 2),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(label,
-              style: pw.TextStyle(fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+              style: pw.TextStyle(
+                  fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal, color: color)),
           pw.Text(AppFormatters.money(value),
-              style: pw.TextStyle(fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+              style: pw.TextStyle(
+                  fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal, color: color)),
         ],
       ),
     );

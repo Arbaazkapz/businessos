@@ -372,6 +372,11 @@ class InvoiceRepository {
     final afterDiscount = subtotal - discount < 0 ? 0.0 : subtotal - discount;
     final taxAmount = afterDiscount * (taxPercent / 100);
     final total = afterDiscount + taxAmount;
+    final amountPaid = switch (status) {
+      InvoiceStatus.paid => total,
+      InvoiceStatus.partial => amountPaidNow.clamp(0, total),
+      InvoiceStatus.unpaid => 0.0,
+    };
 
     await _db.transaction(() async {
       await _db.into(_db.invoices).insert(InvoicesCompanion.insert(
@@ -385,6 +390,7 @@ class InvoiceRepository {
             discount: Value(discount),
             taxPercent: Value(taxPercent),
             total: total,
+            amountPaid: Value(amountPaid),
             status: status,
             notes: Value(notes),
           ));

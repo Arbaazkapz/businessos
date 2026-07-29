@@ -11,6 +11,8 @@ import 'customers/customer_detail_screen.dart';
 import 'invoices/create_invoice_screen.dart';
 import 'ledger/add_ledger_entry_screen.dart';
 import 'settings/settings_screens.dart';
+import 'todays_collections_screen.dart';
+import 'todays_credit_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -21,13 +23,26 @@ class DashboardScreen extends ConsumerWidget {
     final ledgerAsync = ref.watch(allLedgerEntriesProvider);
     final customersAsync = ref.watch(customersProvider);
     final productsAsync = ref.watch(productsProvider);
+    final invoicesAsync = ref.watch(invoicesProvider);
 
     final businessName = profileAsync.valueOrNull?.businessName ?? 'Your Shop';
     final entries = ledgerAsync.valueOrNull ?? const <LedgerEntry>[];
     final customers = customersAsync.valueOrNull ?? const <Customer>[];
     final products = productsAsync.valueOrNull ?? const <Product>[];
+    final invoices = invoicesAsync.valueOrNull ?? const <Invoice>[];
 
-    final todaysCollections = LedgerRepository.sumToday(entries, LedgerEntryType.paymentReceived);
+    // "Paid" invoices (walk-in or customer) never post a ledger entry at all
+    // (there's no debt to track), so they must be added separately here or
+    // they'd silently vanish from today's collections total. Partial-payment
+    // amounts are NOT included in this second sum - those are already
+    // captured via their ledger paymentReceived entry below, so adding them
+    // again here would double-count them.
+    final paidInvoiceCollectionsToday = invoices
+        .where((i) => i.status == InvoiceStatus.paid && AppFormatters.isToday(i.invoiceDate))
+        .fold(0.0, (a, b) => a + b.amountPaid);
+    final todaysCollections =
+        LedgerRepository.sumToday(entries, LedgerEntryType.paymentReceived) +
+            paidInvoiceCollectionsToday;
     final todaysCreditGiven = LedgerRepository.sumToday(entries, LedgerEntryType.creditGiven);
     final totalReceivable = LedgerRepository.totalReceivable(entries);
     final lowStock = ProductRepository.lowStock(products);
@@ -86,6 +101,8 @@ class DashboardScreen extends ConsumerWidget {
                   value: AppFormatters.moneyWhole(todaysCollections),
                   icon: Icons.savings_rounded,
                   color: Colors.green.shade700,
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const TodaysCollectionsScreen())),
                 ),
                 DashboardStatCard(
                   label: 'Money to Receive',
@@ -98,6 +115,8 @@ class DashboardScreen extends ConsumerWidget {
                   value: AppFormatters.moneyWhole(todaysCreditGiven),
                   icon: Icons.call_made_rounded,
                   color: Colors.red.shade600,
+                  onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const TodaysCreditGivenScreen())),
                 ),
                 DashboardStatCard(
                   label: 'Low Stock Items',

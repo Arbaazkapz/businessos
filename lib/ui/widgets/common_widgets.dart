@@ -25,15 +25,28 @@ class DashboardStatCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.18)),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: Colors.white, size: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration:
+                        BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, color: Colors.white, size: 20),
+                  ),
+                  if (onTap != null)
+                    Icon(Icons.chevron_right_rounded,
+                        color: color.withValues(alpha: 0.6), size: 20),
+                ],
               ),
               const SizedBox(height: 14),
               Text(
@@ -155,4 +168,24 @@ Future<bool> confirmDialog(
     ),
   );
   return result ?? false;
+}
+
+/// Shown after every create/update/delete so the user always gets clear
+/// confirmation a change actually saved - not just silence. Safe to call
+/// right before a Navigator.pop()/push(): Flutter's default ScaffoldMessenger
+/// lives above the Navigator, so the snackbar survives the route change and
+/// appears on whichever screen becomes visible next.
+void showSuccessSnack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(message)),
+        ],
+      ),
+      backgroundColor: Colors.green.shade700,
+    ),
+  );
 }

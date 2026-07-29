@@ -28,4 +28,9 @@ class AppFormatters {
   static String dayMonth(DateTime d) => _dayMonth.format(d);
 
   static String fileTimestamp(DateTime d) => _fileStamp.format(d);
+
+  static bool isToday(DateTime d) {
+    final now = DateTime.now();
+    return d.year == now.year && d.month == now.month && d.day == now.day;
+  }
 }
