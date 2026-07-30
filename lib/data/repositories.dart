@@ -374,7 +374,7 @@ class InvoiceRepository {
     final total = afterDiscount + taxAmount;
     final amountPaid = switch (status) {
       InvoiceStatus.paid => total,
-      InvoiceStatus.partial => amountPaidNow.clamp(0, total),
+      InvoiceStatus.partial => amountPaidNow.clamp(0, total).toDouble(),
       InvoiceStatus.unpaid => 0.0,
     };
 
