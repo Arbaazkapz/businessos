@@ -243,7 +243,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
               controller: _barcodeCtrl,
               decoration: const InputDecoration(labelText: 'Barcode (optional)'),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -264,7 +264,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -285,13 +285,13 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _lowStockCtrl,
               decoration: const InputDecoration(labelText: 'Low stock alert threshold'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: _saving

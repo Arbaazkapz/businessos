@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/app_strings.dart';
 import '../data/app_database.dart';
 import '../data/repositories.dart';
 
@@ -37,6 +38,8 @@ final invoiceRepositoryProvider = Provider((ref) => InvoiceRepository(
 final backupRepositoryProvider =
     Provider((ref) => BackupRepository(ref.watch(databaseProvider)));
 
+final noteRepositoryProvider = Provider((ref) => NoteRepository(ref.watch(databaseProvider)));
+
 final authRepositoryProvider = Provider((ref) => AuthRepository());
 
 // ---------------------------------------------------------------------------
@@ -67,6 +70,10 @@ final productsProvider = StreamProvider<List<Product>>((ref) {
 
 final invoicesProvider = StreamProvider<List<Invoice>>((ref) {
   return ref.watch(invoiceRepositoryProvider).watchAll();
+});
+
+final notesProvider = StreamProvider<List<Note>>((ref) {
+  return ref.watch(noteRepositoryProvider).watchAll();
 });
 
 // ---------------------------------------------------------------------------
@@ -109,3 +116,61 @@ final themeModeProvider =
 final appLockedProvider = StateProvider<bool>((ref) => true);
 
 final hasPinProvider = FutureProvider<bool>((ref) => ref.watch(authRepositoryProvider).hasPin());
+
+// ---------------------------------------------------------------------------
+// LANGUAGE (persisted, same pattern as theme mode)
+// ---------------------------------------------------------------------------
+
+class LocaleNotifier extends StateNotifier<AppLocale> {
+  LocaleNotifier() : super(AppLocale.en) {
+    _load();
+  }
+
+  static const _key = 'app_locale_v1';
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_key);
+    state = saved == 'hi' ? AppLocale.hi : AppLocale.en;
+  }
+
+  Future<void> setLocale(AppLocale locale) async {
+    state = locale;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, locale == AppLocale.hi ? 'hi' : 'en');
+  }
+
+  Future<void> toggle() => setLocale(state == AppLocale.en ? AppLocale.hi : AppLocale.en);
+}
+
+final localeProvider = StateNotifierProvider<LocaleNotifier, AppLocale>((ref) => LocaleNotifier());
+
+final appStringsProvider = Provider<AppStrings>((ref) => AppStrings(ref.watch(localeProvider)));
+
+// ---------------------------------------------------------------------------
+// BACKUP REMINDER TRACKING (used by the notifications bell)
+// ---------------------------------------------------------------------------
+
+class LastBackupNotifier extends StateNotifier<AsyncValue<DateTime?>> {
+  LastBackupNotifier() : super(const AsyncValue.loading()) {
+    _load();
+  }
+
+  static const _key = 'last_backup_at_v1';
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final iso = prefs.getString(_key);
+    state = AsyncValue.data(iso != null ? DateTime.tryParse(iso) : null);
+  }
+
+  Future<void> markBackedUpNow() async {
+    final now = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, now.toIso8601String());
+    state = AsyncValue.data(now);
+  }
+}
+
+final lastBackupProvider =
+    StateNotifierProvider<LastBackupNotifier, AsyncValue<DateTime?>>((ref) => LastBackupNotifier());

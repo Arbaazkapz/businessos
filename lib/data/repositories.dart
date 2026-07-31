@@ -445,6 +445,32 @@ class InvoiceRepository {
 }
 
 // ---------------------------------------------------------------------------
+// NOTES (simple notepad)
+// ---------------------------------------------------------------------------
+
+class NoteRepository {
+  NoteRepository(this._db);
+  final AppDatabase _db;
+
+  Stream<List<Note>> watchAll() =>
+      (_db.select(_db.notes)..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).watch();
+
+  Future<String> create(String content) async {
+    final id = _uuid.v4();
+    await _db.into(_db.notes).insert(NotesCompanion.insert(id: id, content: content));
+    return id;
+  }
+
+  Future<void> update(String id, String content) {
+    return (_db.update(_db.notes)..where((t) => t.id.equals(id))).write(
+      NotesCompanion(content: Value(content), updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  Future<void> delete(String id) => (_db.delete(_db.notes)..where((t) => t.id.equals(id))).go();
+}
+
+// ---------------------------------------------------------------------------
 // BACKUP & RESTORE (fully local, AES-256 encrypted, no cloud involved)
 // ---------------------------------------------------------------------------
 

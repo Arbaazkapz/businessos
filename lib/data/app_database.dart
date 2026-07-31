@@ -121,18 +121,29 @@ class InvoiceItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('Note')
+class Notes extends Table {
+  TextColumn get id => text()();
+  TextColumn get content => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ---------------------------------------------------------------------------
 // DATABASE
 // ---------------------------------------------------------------------------
 
 @DriftDatabase(
-  tables: [BusinessProfiles, Customers, LedgerEntries, Products, Invoices, InvoiceItems],
+  tables: [BusinessProfiles, Customers, LedgerEntries, Products, Invoices, InvoiceItems, Notes],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -140,6 +151,9 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(invoices, invoices.amountPaid);
+          }
+          if (from < 3) {
+            await m.createTable(notes);
           }
         },
       );

@@ -250,6 +250,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         ),
       );
       if (mounted) showSuccessSnack(context, 'Backup created');
+      await ref.read(lastBackupProvider.notifier).markBackedUpNow();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup failed: $e')));

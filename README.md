@@ -44,21 +44,35 @@ by module rather than a shallow pass over everything.
 
 ## Update log
 
-**v1.1** (this update): fixed the ₹ symbol rendering as a broken box in
-invoice PDFs (embedded a real Unicode font - see `assets/fonts/`); invoices
-now store and display the amount actually paid and balance due; fixed a real
-bug where paid invoices (including walk-in sales) weren't counted in
-"Today's Collections" at all; added drilldown screens for Today's
-Collections and Today's Credit Given; added success confirmations after
-every add/edit/delete action; fixed a UI bug where a snackbar could cover
-the primary button on the invoice and ledger-entry forms.
+**v1.2** (this update): fixed the Add Customer quick-action button rendering
+a different size than the others (it wraps to two lines, so it now has a
+fixed footprint like the rest); added more breathing room to the Add
+Product and Create Invoice forms; added a real welcome header (greeting +
+owner name + business name); added a notification bell wired to real data
+(customers with pending dues, low stock products, overdue invoices, backup
+reminders) that's tappable through to the relevant screen; added a working
+English/Hindi language toggle (see "Language support" below for exact
+coverage); added a "+" quick-tools button on the dashboard with a genuinely
+working Notepad (persisted, encrypted-backup-included) and Calculator - not
+demos. This update adds one more small schema migration (a `notes` table).
 
-This update includes a **database schema change** (adds an `amountPaid`
-column to invoices) with a safe migration - if you already installed a
-v1.0 build on a device, this update will upgrade its data in place rather
-than requiring a fresh install or losing data. Still, back up first via
-Settings → Backup & Restore before updating a device you care about, as
-good practice with any schema change.
+**v1.1**: fixed the ₹ symbol rendering as a broken box in invoice PDFs;
+invoices now store and display amount paid / balance due; fixed paid
+invoices not being counted in Today's Collections; added Today's
+Collections / Today's Credit Given drilldown screens; added success
+confirmations after every add/edit/delete; fixed a snackbar-covers-button
+overlap bug.
+
+### Language support (v1.2)
+
+The EN/Hindi toggle (top right of the dashboard) is real and persists
+across app restarts, but translation coverage is currently: bottom
+navigation, the dashboard, and the notifications screen. Screen-by-screen
+forms (Add Customer, Add Product, Invoices, Settings, etc.) still display
+in English regardless of the toggle. Extending coverage is mechanical -
+add more entries to the two maps in `lib/core/app_strings.dart` and call
+`strings.t('your_key')` in the screen you're translating - but doing that
+for all ~20 screens is a larger follow-up, not done here.
 
 ## What's implemented (fully working, no mock data)
 
@@ -81,6 +95,15 @@ good practice with any schema change.
   database to a file you share/save anywhere (Drive, WhatsApp, USB, etc.);
   restore from that file. Nothing is ever uploaded automatically.
 - **Security** - optional PIN lock + fingerprint/face unlock.
+- **Notifications** - a bell icon showing customers with pending dues, low
+  stock products, overdue invoices, and backup reminders, each tappable
+  through to the relevant screen.
+- **Notepad** - a genuine persisted note list (add/edit/delete), included
+  automatically in encrypted backups since it lives in the same database.
+- **Calculator** - a real working calculator (standard sequential
+  evaluation, like any basic phone calculator) for quick sums.
+- **Language toggle** - EN/Hindi switch; see "Language support" above for
+  exact current coverage.
 - **Theming** - Material 3, light/dark/system, India-appropriate ₹ and date
   formatting throughout.
 
