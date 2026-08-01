@@ -81,7 +81,7 @@ final notesProvider = StreamProvider<List<Note>>((ref) {
 // ---------------------------------------------------------------------------
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system) {
+  ThemeModeNotifier() : super(ThemeMode.light) {
     _load();
   }
 
@@ -91,12 +91,12 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_key);
     switch (saved) {
-      case 'light':
-        state = ThemeMode.light;
       case 'dark':
         state = ThemeMode.dark;
-      default:
+      case 'system':
         state = ThemeMode.system;
+      default:
+        state = ThemeMode.light;
     }
   }
 

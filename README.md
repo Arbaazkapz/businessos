@@ -44,25 +44,23 @@ by module rather than a shallow pass over everything.
 
 ## Update log
 
-**v1.3** (this update): **fixed the actual reason recent updates looked like
-they weren't installing.** Every CI run starts on a brand-new machine with
-no signing key, so Gradle was auto-generating a *different random* debug
-key on every single build. Android silently refuses to install an APK as
-an "update" if its signature doesn't match the currently-installed app -
-so every build after the first one may have failed to actually install,
-even though each download looked successful. Fixed by generating one
-fixed, committed debug key (`debug.keystore` at the repo root - this file
-is intentionally not secret, same as Android's own auto-generated debug
-keys) and wiring the build to always use it. Also relocated the dashboard
-quick-tools button (it was overlapping the "no activity" card as a
-floating button) and fixed the calculator to show the actual arithmetic
-expression, not just raw numbers.
+**v1.4** (this update): fixed a real calculator layout bug (the display
+wasn't properly size-constrained, so results could visually spill into the
+button grid) and redesigned it as a clean uniform grid; added a GST quick
+calculator (tap "GST" in the calculator's app bar); tabs now support
+WhatsApp/Instagram-style horizontal swipe, not just tapping; the invoice
+customer picker now has an always-available "Add new customer" option
+(previously a dead end if none existed yet) and both the customer and
+product pickers are now searchable, which matters once you have hundreds
+of products; the business setup form now has a searchable country-code
+picker for the phone field (150+ countries, India first) plus real phone
+number and GSTIN format validation; default theme is now light instead of
+following system settings.
 
-> **⚠️ One-time action needed:** because every earlier build had a
-> different signature, your phone's currently-installed BusinessOS won't
-> accept this one as an "update" either. **Uninstall the app once**, then
-> install this build fresh. Every build after this one will share the same
-> signature and install as a normal update - no more uninstalling required.
+**v1.3**: fixed the actual reason updates looked like they weren't
+installing - every CI run was signing with a different random debug key,
+which silently blocks installing an "update". Now uses one fixed, committed
+key so every build after this one installs cleanly over the last.
 
 **v1.2**: added a notification bell wired to real data, a working EN/Hindi
 language toggle, a real (non-demo) Notepad and Calculator, a welcome

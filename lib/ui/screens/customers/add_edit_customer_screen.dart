@@ -55,9 +55,11 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     final repo = ref.read(customerRepositoryProvider);
     final creditLimit = double.tryParse(_creditLimitCtrl.text.trim());
     try {
+      final String customerId;
       if (_isEditing) {
+        customerId = widget.existing!.id;
         await repo.update(
-          widget.existing!.id,
+          customerId,
           name: _nameCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
           address: _addressCtrl.text.trim(),
@@ -66,7 +68,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
           notes: _notesCtrl.text.trim(),
         );
       } else {
-        await repo.create(
+        customerId = await repo.create(
           name: _nameCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
           address: _addressCtrl.text.trim(),
@@ -75,9 +77,13 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
           notes: _notesCtrl.text.trim(),
         );
       }
+      // Read the record straight back from the database (not the reactive
+      // stream, which may not have re-emitted yet) so the caller gets a
+      // guaranteed-fresh Customer immediately, with no race condition.
+      final saved = await repo.getById(customerId);
       if (!mounted) return;
       showSuccessSnack(context, _isEditing ? 'Customer updated' : 'Customer added');
-      Navigator.pop(context, true);
+      Navigator.pop(context, saved);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

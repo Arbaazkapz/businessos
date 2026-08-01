@@ -17,6 +17,7 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   int _index = 0;
+  final PageController _pageController = PageController();
 
   static const _screens = [
     DashboardScreen(),
@@ -27,13 +28,32 @@ class _MainShellState extends ConsumerState<MainShell> {
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goToTab(int i) {
+    setState(() => _index = i);
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = ref.watch(appStringsProvider);
     return Scaffold(
-      body: IndexedStack(index: _index, children: _screens),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (i) => setState(() => _index = i),
+        children: _screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: _goToTab,
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.dashboard_outlined),
