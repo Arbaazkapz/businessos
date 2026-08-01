@@ -120,51 +120,72 @@ class DashboardScreen extends ConsumerWidget {
         .whereType<Customer>()
         .toList();
 
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(businessName, overflow: TextOverflow.ellipsis),
         actions: [
-          TextButton(
-            onPressed: () => ref.read(localeProvider.notifier).toggle(),
-            child: Text(
-              locale == AppLocale.hi ? 'हिं' : 'EN',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.onSurface,
+          Material(
+            color: scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => ref.read(localeProvider.notifier).toggle(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.translate_rounded, size: 16, color: scheme.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text(
+                      locale == AppLocale.hi ? 'हिं' : 'EN',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                tooltip: strings.t('notifications_title'),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+          const SizedBox(width: 8),
+          Material(
+            color: scheme.surfaceContainerHigh,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(Icons.notifications_outlined, color: scheme.onSurfaceVariant),
+                    if (attention.total > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: scheme.surfaceContainerHigh, width: 1.5),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (attention.total > 0)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    width: 9,
-                    height: 9,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  ),
-                ),
-            ],
+            ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 12),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showQuickTools(context, strings),
-        tooltip: strings.t('quick_add_title'),
-        child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -187,7 +208,22 @@ class DashboardScreen extends ConsumerWidget {
                   .bodyMedium
                   ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
-            SectionHeader('${strings.t('dashboard_today')} - ${AppFormatters.date(DateTime.now())}'),
+            SectionHeader(
+              '${strings.t('dashboard_today')} - ${AppFormatters.date(DateTime.now())}',
+              trailing: Material(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => _showQuickTools(context, strings),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(Icons.add_rounded,
+                        size: 20, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                  ),
+                ),
+              ),
+            ),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
