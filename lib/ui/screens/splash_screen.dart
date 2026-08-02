@@ -69,7 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'BusinessOS',
+              'ShopHisab',
               style: Theme.of(context)
                   .textTheme
                   .headlineMedium

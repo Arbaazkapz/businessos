@@ -1,4 +1,4 @@
-# BusinessOS
+# ShopHisab
 
 **Your Shop. Your Data. Always Available.**
 
@@ -44,7 +44,19 @@ by module rather than a shallow pass over everything.
 
 ## Update log
 
-**v1.4** (this update): fixed a real calculator layout bug (the display
+**v1.5** (this update): rebranded from "BusinessOS" to **ShopHisab**
+throughout the app (splash screen, settings, PDF footer, PIN/backup
+dialogs) and set your provided icon as the real launcher icon (generated
+properly for every Android density via `flutter_launcher_icons`, not just
+dropped in at one size). The technical package identifier
+(`com.businessos.businessos`) was deliberately left unchanged - only the
+display name and icon changed, so this update still installs cleanly over
+your last build with no uninstall needed. If you want the technical
+identifier renamed too eventually (matters for Play Store branding, not
+for how the app looks or works), that's a separate ask since it would
+force one more uninstall.
+
+**v1.4**: fixed a real calculator layout bug (the display
 wasn't properly size-constrained, so results could visually spill into the
 button grid) and redesigned it as a clean uniform grid; added a GST quick
 calculator (tap "GST" in the calculator's app bar); tabs now support
@@ -167,6 +179,13 @@ flutter pub get
 # 4. Generate the local database code (Drift)
 dart run build_runner build --delete-conflicting-outputs
 
+# 4.5. Generate the app icon from assets/icon/app_icon.png
+dart run flutter_launcher_icons
+
+# 4.6. Set the app's display name (the CI pipeline does this automatically -
+#      for a local build, edit it yourself in one place):
+#      android/app/src/main/AndroidManifest.xml -> android:label="ShopHisab"
+
 # 5. Enable biometric unlock (one manual native tweak - local_auth needs this)
 #    Edit android/app/src/main/kotlin/.../MainActivity.kt:
 #      change: class MainActivity: FlutterActivity()
@@ -199,7 +218,7 @@ A few things only you can/should do, deliberately not automated here:
 - Set a proper `applicationId`, app icon, and splash screen.
 - Write a privacy policy (required by Play Store even for offline apps that
   collect no data) and complete the Play Console's data-safety form -
-  BusinessOS collects no data at all, which makes this section easy to fill
+  ShopHisab collects no data at all, which makes this section easy to fill
   in honestly.
 - Test on a handful of real devices, especially the PIN/biometric lock flow
   and the backup/restore flow.

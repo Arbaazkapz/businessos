@@ -7,17 +7,17 @@ import 'ui/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: BusinessOSApp()));
+  runApp(const ProviderScope(child: ShopHisabApp()));
 }
 
-class BusinessOSApp extends ConsumerWidget {
-  const BusinessOSApp({super.key});
+class ShopHisabApp extends ConsumerWidget {
+  const ShopHisabApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
-      title: 'BusinessOS',
+      title: 'ShopHisab',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

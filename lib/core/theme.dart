@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Central theme definitions for BusinessOS.
+/// Central theme definitions for ShopHisab.
 ///
 /// Design direction: large confident typography for numbers (owners glance
 /// at this screen in bright shop lighting), generous rounded cards, and a

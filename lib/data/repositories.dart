@@ -565,7 +565,7 @@ class AuthRepository {
   Future<bool> authenticateBiometric() async {
     try {
       return await _localAuth.authenticate(
-        localizedReason: 'Unlock BusinessOS',
+        localizedReason: 'Unlock ShopHisab',
         options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
     } catch (_) {

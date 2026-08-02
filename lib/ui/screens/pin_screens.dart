@@ -164,7 +164,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Choose a 4-6 digit PIN to lock BusinessOS.',
+            Text('Choose a 4-6 digit PIN to lock ShopHisab.',
                 style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 20),
             TextField(

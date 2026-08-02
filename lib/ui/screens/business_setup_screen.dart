@@ -251,7 +251,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : Text(_isEditing ? 'Save Changes' : 'Start using BusinessOS'),
+                : Text(_isEditing ? 'Save Changes' : 'Start using ShopHisab'),
           ),
         ],
       ),

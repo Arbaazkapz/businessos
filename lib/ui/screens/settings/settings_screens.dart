@@ -154,7 +154,7 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionLabel('About'),
           const ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('BusinessOS v1.0'),
+            title: Text('ShopHisab v1.5'),
             subtitle: Text(
                 'Your Shop. Your Data. Always Available.\nWorks fully offline - no account, no server, no ads.'),
             isThreeLine: true,
@@ -245,8 +245,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          subject: 'BusinessOS Backup',
-          text: 'BusinessOS encrypted backup - keep this file and your passphrase safe.',
+          subject: 'ShopHisab Backup',
+          text: 'ShopHisab encrypted backup - keep this file and your passphrase safe.',
         ),
       );
       if (mounted) showSuccessSnack(context, 'Backup created');
@@ -302,7 +302,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         builder: (ctx) => AlertDialog(
           title: const Text('Restore complete'),
           content: const Text(
-              'Please close BusinessOS completely and reopen it to load the restored data.'),
+              'Please close ShopHisab completely and reopen it to load the restored data.'),
           actions: [
             FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
           ],
@@ -333,7 +333,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
-                      'Backups are AES-256 encrypted and stored only where you choose to save or share them. BusinessOS never uploads your data automatically.',
+                      'Backups are AES-256 encrypted and stored only where you choose to save or share them. ShopHisab never uploads your data automatically.',
                     ),
                   ),
                 ],
