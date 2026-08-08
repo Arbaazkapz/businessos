@@ -1,0 +1,157 @@
+name: Build ShopHisab APK
+
+# Push this repo to GitHub (or click "Run workflow" manually) and this will
+# produce a real, installable APK under the run's "Artifacts" section -
+# no local Flutter/Android Studio installation required on your machine.
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Scaffold Android platform files (matches installed Flutter/Gradle versions)
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create --platforms=android --org com.businessos --project-name businessos temp_scaffold
+            cp -r temp_scaffold/android ./android
+            rm -rf temp_scaffold
+          fi
+
+      - name: Enable biometric unlock support (local_auth needs a FragmentActivity)
+        run: |
+          MAIN_ACTIVITY=$(find android/app/src/main -name "MainActivity.kt" | head -n 1)
+          if [ -n "$MAIN_ACTIVITY" ]; then
+            sed -i 's/FlutterActivity/FlutterFragmentActivity/g' "$MAIN_ACTIVITY"
+          fi
+
+      - name: Add USE_BIOMETRIC and INTERNET permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          grep -q "USE_BIOMETRIC" "$MANIFEST" || \
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' "$MANIFEST"
+          grep -q "android.permission.INTERNET" "$MANIFEST" || \
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST"
+
+      - name: Set app display name to ShopHisab
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i -E 's/android:label="[^"]*"/android:label="ShopHisab"/' "$MANIFEST"
+
+      - name: Bump compileSdk to 36 in our own app module
+        run: |
+          GRADLE_KTS="android/app/build.gradle.kts"
+          GRADLE_GROOVY="android/app/build.gradle"
+          for f in "$GRADLE_KTS" "$GRADLE_GROOVY"; do
+            if [ -f "$f" ]; then
+              sed -i -E 's/^([[:space:]]*)compileSdk(Version)?[[:space:]]*=?[[:space:]]*.+$/\1compileSdk = 36/' "$f"
+            fi
+          done
+
+      - name: Use a stable signing key (so every build can update the last one)
+        run: |
+          # Without this, Gradle auto-generates a NEW random debug key on every
+          # fresh CI runner. Android refuses to install an APK as an "update"
+          # over an app signed with a different key - it just silently fails,
+          # which looks exactly like "my new build has no changes". Using a
+          # fixed, committed (non-secret) debug key makes every build from
+          # this pipeline share one signature so updates always install cleanly.
+          cp debug.keystore android/app/debug.keystore
+          GRADLE_KTS="android/app/build.gradle.kts"
+          GRADLE_GROOVY="android/app/build.gradle"
+          if [ -f "$GRADLE_KTS" ]; then
+            echo "" >> "$GRADLE_KTS"
+            printf '%s\n' \
+              'android {' \
+              '    signingConfigs {' \
+              '        getByName("debug") {' \
+              '            storeFile = file("debug.keystore")' \
+              '            storePassword = "android"' \
+              '            keyAlias = "androiddebugkey"' \
+              '            keyPassword = "android"' \
+              '        }' \
+              '    }' \
+              '    buildTypes {' \
+              '        getByName("release") {' \
+              '            signingConfig = signingConfigs.getByName("debug")' \
+              '        }' \
+              '    }' \
+              '}' >> "$GRADLE_KTS"
+          elif [ -f "$GRADLE_GROOVY" ]; then
+            echo "" >> "$GRADLE_GROOVY"
+            printf '%s\n' \
+              'android {' \
+              '    signingConfigs {' \
+              '        debug {' \
+              '            storeFile file("debug.keystore")' \
+              '            storePassword "android"' \
+              '            keyAlias "androiddebugkey"' \
+              '            keyPassword "android"' \
+              '        }' \
+              '    }' \
+              '    buildTypes {' \
+              '        release {' \
+              '            signingConfig signingConfigs.debug' \
+              '        }' \
+              '    }' \
+              '}' >> "$GRADLE_GROOVY"
+          fi
+
+      - name: Get Flutter/Dart dependencies
+        run: flutter pub get
+
+      - name: Generate app icon from assets/icon/app_icon.png
+        run: |
+          dart run flutter_launcher_icons
+          echo "--- verifying adaptive icon XML was regenerated (this is what modern Android actually reads) ---"
+          find android/app/src/main/res -iname "ic_launcher*.xml" -exec echo {} \; -exec cat {} \;
+          echo "--- mipmap directories present ---"
+          find android/app/src/main/res -type d -name "mipmap*"
+
+      - name: Bump compileSdk to 36 in every downloaded plugin (fixes file_picker AAR metadata errors)
+        run: |
+          CACHE_ROOT="${PUB_CACHE:-$HOME/.pub-cache}/hosted/pub.dev"
+          echo "Scanning $CACHE_ROOT for plugin Gradle files..."
+          find "$CACHE_ROOT" -path "*/android/build.gradle" 2>/dev/null | while read -r f; do
+            BEFORE=$(grep -nE "compileSdk" "$f" || true)
+            sed -i -E 's/^([[:space:]]*)compileSdk(Version)?[[:space:]]*=?[[:space:]]*.+$/\1compileSdk = 36/' "$f"
+            AFTER=$(grep -nE "compileSdk" "$f" || true)
+            if [ -n "$BEFORE" ]; then
+              echo "--- $f ---"
+              echo "before: $BEFORE"
+              echo "after:  $AFTER"
+            fi
+          done
+
+      - name: Generate local database code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos || true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build app bundle (for Play Store - still needs your own signing key, see README)
+        run: flutter build appbundle --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shophisab-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shophisab-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
