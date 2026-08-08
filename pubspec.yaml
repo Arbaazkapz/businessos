@@ -50,6 +50,13 @@ dependencies:
   # Dashboard charts
   fl_chart: ^0.68.0
 
+  # Optional cloud backup: Google Sign-In (restricted to the drive.file
+  # scope only - the app can never see files it didn't create) + raw HTTP
+  # calls to the Drive v3 REST API. Deliberately not using the heavier
+  # `googleapis` package to keep this dependency surface minimal.
+  google_sign_in: ^7.2.0
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -67,8 +74,18 @@ flutter:
 # overwriting the default Flutter icon in place (android: true, not a
 # custom name, means AndroidManifest.xml's existing icon reference never
 # needs to change). Run via `dart run flutter_launcher_icons`.
+#
+# adaptive_icon_* is NOT optional here even though it looks like it: Android
+# 8.0+ (API 26+, i.e. virtually every active phone) resolves the launcher
+# icon through mipmap-anydpi-v26/ic_launcher.xml, which Flutter's default
+# template points at ITS OWN default icon layers - and that XML takes
+# priority over the plain mipmap-*/ic_launcher.png files. Without these two
+# keys, flutter_launcher_icons only overwrote the PNGs nobody on a modern
+# phone actually looks at, which is why the old icon kept showing up.
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#0E6E4E"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"

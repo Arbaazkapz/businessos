@@ -170,6 +170,12 @@ class LastBackupNotifier extends StateNotifier<AsyncValue<DateTime?>> {
     await prefs.setString(_key, now.toIso8601String());
     state = AsyncValue.data(now);
   }
+
+  Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+    state = const AsyncValue.data(null);
+  }
 }
 
 final lastBackupProvider =

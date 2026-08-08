@@ -44,11 +44,34 @@ by module rather than a shallow pass over everything.
 
 ## Update log
 
-**v1.5** (this update): rebranded from "BusinessOS" to **ShopHisab**
-throughout the app (splash screen, settings, PDF footer, PIN/backup
-dialogs) and set your provided icon as the real launcher icon (generated
-properly for every Android density via `flutter_launcher_icons`, not just
-dropped in at one size). The technical package identifier
+**v1.7** (this update): added optional Google Drive backup, restricted to
+the narrowest possible scope (the app can only ever see files it created
+itself - never your other Drive content). This required real research, not
+guessing: `google_sign_in` had a major breaking-change version bump (v7)
+with a genuinely different API shape than what most tutorials still show,
+so the implementation here was verified against the official Flutter team
+example rather than assumed. **This feature needs a one-time setup only
+you can do** - see "Setting up Google Drive backup" below; the code won't
+work until that's done.
+
+**v1.6**: the icon fix in v1.5 below was incomplete - it
+turned out to be a real, specific bug, not just a caching issue. Android
+8.0+ (basically every active phone) resolves the launcher icon through a
+separate "adaptive icon" definition file, which Flutter's default template
+points at its own default icon - and that file takes priority over the
+plain icon files v1.5 was correctly overwriting. Fixed by explicitly
+telling `flutter_launcher_icons` to regenerate the adaptive definition too
+(see `pubspec.yaml`'s `adaptive_icon_background`/`adaptive_icon_foreground`
+keys). Also added a "Switch business / Reset app" option in Settings
+(Danger Zone) - there's no account system to log out of, so this is the
+honest equivalent: wipes local data with a backup off-ramp built into the
+confirmation flow, so you can set up a different business or hand the
+phone to someone else.
+
+**v1.5**: rebranded from "BusinessOS" to **ShopHisab** throughout the app
+(splash screen, settings, PDF footer, PIN/backup dialogs) and attempted to
+set the provided image as the real launcher icon - see v1.6 above, this
+turned out to need one more fix. The technical package identifier
 (`com.businessos.businessos`) was deliberately left unchanged - only the
 display name and icon changed, so this update still installs cleanly over
 your last build with no uninstall needed. If you want the technical
@@ -116,6 +139,11 @@ for all ~20 screens is a larger follow-up, not done here.
   database to a file you share/save anywhere (Drive, WhatsApp, USB, etc.);
   restore from that file. Nothing is ever uploaded automatically.
 - **Security** - optional PIN lock + fingerprint/face unlock.
+- **Switch business / Reset app** - Settings → Danger Zone. Wipes local
+  data (with a backup prompt first) so the phone can be handed to a new
+  owner or set up for a different business.
+- **Google Drive backup (optional)** - Settings → Backup & Restore.
+  Requires one-time setup - see "Setting up Google Drive backup" below.
 - **Notifications** - a bell icon showing customers with pending dues, low
   stock products, overdue invoices, and backup reminders, each tappable
   through to the relevant screen.
@@ -249,6 +277,74 @@ newer Flutter SDK than mid-2026 and hit a type error, check:
 
 - `CardThemeData` (in `lib/core/theme.dart`) → older SDKs may want `CardTheme`.
 - `DropdownButtonFormField(initialValue: ...)` → older SDKs may want `value:`.
+
+---
+
+## Setting up Google Drive backup
+
+This feature is in the code, but **it will not work until you complete a
+one-time setup that only you (as the Google account holder) can do** -
+this is a hard Google requirement, not something I can script around.
+Local backup (Settings → Backup & Restore → Export/Restore file) works
+today with zero setup; Drive backup is purely an additional, optional
+destination alongside it.
+
+**What you're setting up:** permission for the app to create and manage
+files in a private, sandboxed area of *your own* Drive - it is technically
+incapable of seeing your other files. This is enforced by Google
+(`drive.file` scope), not just a promise in this README.
+
+### Steps (about 15 minutes, all free)
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and
+   create a new project (top-left project dropdown → New Project). Name it
+   whatever you like, e.g. "ShopHisab".
+2. **Enable the Drive API**: in the left sidebar, "APIs & Services" →
+   "Library" → search "Google Drive API" → click it → **Enable**.
+3. **Configure the OAuth consent screen**: "APIs & Services" → "OAuth
+   consent screen".
+   - User type: **External** (unless you have a Google Workspace account).
+   - Fill in app name ("ShopHisab"), your email as support contact and
+     developer contact.
+   - Scopes: add `.../auth/drive.file` (search for "drive.file").
+   - **Test users**: add every Gmail address that will actually use this
+     (yourself, staff, etc.) - up to 100. While the app is in "Testing"
+     status (the default, and totally fine to stay in if it's just you and
+     your staff), only addresses on this list can sign in, and sessions
+     need re-authorizing roughly every 7 days. That's a minor annoyance,
+     not a blocker, for personal/small-team use.
+   - If you eventually want *any* shopkeeper using this app (not just
+     people you've added as test users) to be able to sign in, you'd need
+     to "Publish" the app. For the `drive.file` scope specifically this
+     does **not** require Google's lengthy sensitive-scope review, but it
+     does need a real, hosted privacy policy URL and a working support
+     contact - a separate task from anything in this repo.
+4. **Create the OAuth credential**: "APIs & Services" → "Credentials" →
+   "Create Credentials" → "OAuth client ID".
+   - Application type: **Android**.
+   - Package name: `com.businessos.businessos`
+   - SHA-1 certificate fingerprint: `A8:C9:76:2D:2C:F3:7B:DE:05:CB:4A:D6:52:5D:8A:12:00:D9:3D:55`
+     (this is the fingerprint of the stable debug key already committed to
+     this repo as `debug.keystore` - the same one every CI build signs
+     with, so this stays correct as long as you keep using that key).
+5. That's it - save. No client ID needs to be pasted into this app's code:
+   for Android specifically, Google Play Services resolves the right
+   credential automatically by matching your app's package name + signing
+   certificate against what you just registered.
+
+### Testing it
+
+Build and install a fresh APK from this repo, then Settings → Backup &
+Restore → "Connect Google Drive". You'll need a real device (or an
+emulator with Google Play Services, not all of them have it) signed into
+one of the Gmail addresses you added as a test user.
+
+### If your signing key ever changes
+
+If you move off the shared debug key to your own real release key (see
+"Before you submit to the Play Store" above), you'll need to add a
+*second* Android OAuth client in the same Cloud project with that key's
+SHA-1, or Google Sign-In will fail for release builds signed with it.
 
 ---
 
