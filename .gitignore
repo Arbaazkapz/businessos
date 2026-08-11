@@ -1,13 +1,30 @@
-*.iml
-.gradle/
-/local.properties
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart.bak
+
+# Android (generated via `flutter create`, not committed by default here -
+# remove these lines once you've generated android/ and want to commit it)
+android/local.properties
+android/**/gradle-wrapper.jar
+android/.gradle/
+android/key.properties
+*.jks
+*.keystore
+!debug.keystore
+
+# iOS
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Pods/
+
+# IDE
 .idea/
+.vscode/
+*.iml
+
+# macOS
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-app/build/
-*.apk
-*.aab

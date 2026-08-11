@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
+import '../core/google_config.dart';
+
 /// Deliberately the narrowest possible Drive scope: the app can only see
 /// and manage files it creates itself, never anything else in the user's
 /// Drive. This also matters practically - broader scopes require Google's
@@ -17,8 +19,15 @@ const driveBackupScopes = <String>['https://www.googleapis.com/auth/drive.file']
 /// this and errors if you call initialize() more than once) - wrapping it
 /// in a FutureProvider gives us that for free via Riverpod's memoization.
 final googleSignInProvider = FutureProvider<GoogleSignIn>((ref) async {
+  if (!isGoogleServerClientIdConfigured) {
+    throw Exception(
+      'Google Drive is not set up yet. Create a "Web application" OAuth '
+      'client ID in Google Cloud Console and paste it into '
+      'lib/core/google_config.dart (see the comment there for exact steps).',
+    );
+  }
   final signIn = GoogleSignIn.instance;
-  await signIn.initialize();
+  await signIn.initialize(serverClientId: googleServerClientId);
   return signIn;
 });
 

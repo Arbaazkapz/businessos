@@ -6,6 +6,7 @@ import '../../data/app_database.dart';
 import '../../providers/app_providers.dart';
 import '../widgets/common_widgets.dart';
 import 'main_shell.dart';
+import 'settings/settings_screens.dart';
 
 const _categories = [
   'General Store / Kirana',
@@ -253,6 +254,19 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                   )
                 : Text(_isEditing ? 'Save Changes' : 'Start using ShopHisab'),
           ),
+          if (!_isEditing) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: _saving
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+                      ),
+              icon: const Icon(Icons.restore_rounded),
+              label: const Text('Already have a backup? Restore old data'),
+            ),
+          ],
         ],
       ),
     );

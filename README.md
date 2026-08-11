@@ -327,10 +327,24 @@ incapable of seeing your other files. This is enforced by Google
      (this is the fingerprint of the stable debug key already committed to
      this repo as `debug.keystore` - the same one every CI build signs
      with, so this stays correct as long as you keep using that key).
-5. That's it - save. No client ID needs to be pasted into this app's code:
-   for Android specifically, Google Play Services resolves the right
-   credential automatically by matching your app's package name + signing
-   certificate against what you just registered.
+5. Save it. This Android client is resolved automatically at runtime by
+   Play Services (package name + signing certificate matching) - it never
+   gets typed into code.
+6. **Create a second credential - this one you DO need to paste in.**
+   "Create Credentials" → "OAuth client ID" again, but this time:
+   - Application type: **Web application** (not Android).
+   - No redirect URIs needed - just name it (e.g. "ShopHisab server") and
+     Create.
+   - Copy the Client ID it gives you (ends in
+     `.apps.googleusercontent.com`).
+   - Paste it into `lib/core/google_config.dart`, replacing the
+     `REPLACE_WITH_YOUR_WEB_OAUTH_CLIENT_ID...` placeholder.
+
+   This step is easy to miss but is required by the `google_sign_in`
+   plugin (v7+) even though this app has no server of its own - without it
+   you'll hit exactly this error: `GoogleSignInException(code
+   clientConfigurationError, serverClientId must be provided on Android,
+   null)`.
 
 ### Testing it
 
