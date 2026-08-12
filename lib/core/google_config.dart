@@ -26,7 +26,7 @@
 /// This value is not a secret (it identifies your app, it doesn't
 /// authenticate it) so it's fine to commit/ship in the APK.
 const String googleServerClientId =
-    '225715080177-8rmdpsc9o2fuafsg7dkggkli75sk3gm5.apps.googleusercontent.com';
+    'REPLACE_WITH_YOUR_WEB_OAUTH_CLIENT_ID.apps.googleusercontent.com';
 
 bool get isGoogleServerClientIdConfigured =>
     !googleServerClientId.startsWith('REPLACE_WITH_');
