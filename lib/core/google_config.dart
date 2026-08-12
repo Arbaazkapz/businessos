@@ -20,7 +20,7 @@
 ///      application" (NOT Android)
 ///   3. No redirect URIs are needed for this use case - just create it and
 ///      copy the Client ID (looks like
-///      "123456789-abc...xyz.apps.googleusercontent.com")
+///      "225715080177-8rmdpsc9o2fuafsg7dkggkli75sk3gm5.apps.googleusercontent.com")
 ///   4. Paste that value below.
 ///
 /// This value is not a secret (it identifies your app, it doesn't
