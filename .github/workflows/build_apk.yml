@@ -1,4 +1,4 @@
-name: Build BusinessOS APK
+name: Build ShopHisab APK
 
 # Push this repo to GitHub (or click "Run workflow" manually) and this will
 # produce a real, installable APK under the run's "Artifacts" section -
@@ -34,11 +34,38 @@ jobs:
             sed -i 's/FlutterActivity/FlutterFragmentActivity/g' "$MAIN_ACTIVITY"
           fi
 
-      - name: Add USE_BIOMETRIC permission
+      - name: Add USE_BIOMETRIC and INTERNET permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           grep -q "USE_BIOMETRIC" "$MANIFEST" || \
             sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' "$MANIFEST"
+          grep -q "android.permission.INTERNET" "$MANIFEST" || \
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST"
+
+      - name: Set app display name to ShopHisab
+        run: |
+          # Cover every manifest flavor (main/debug/profile) and both forms
+          # Flutter's template can use: a literal android:label="businessos"
+          # OR android:label="@string/app_name" pointing at strings.xml.
+          for MANIFEST in android/app/src/main/AndroidManifest.xml \
+                          android/app/src/debug/AndroidManifest.xml \
+                          android/app/src/profile/AndroidManifest.xml; do
+            [ -f "$MANIFEST" ] || continue
+            sed -i -E 's/android:label="[^"]*"/android:label="ShopHisab"/' "$MANIFEST"
+          done
+          STRINGS="android/app/src/main/res/values/strings.xml"
+          if [ -f "$STRINGS" ]; then
+            sed -i -E 's/(<string name="app_name">)[^<]*(<\/string>)/\1ShopHisab\2/' "$STRINGS"
+          fi
+          echo "--- resulting labels ---"
+          grep -rn "android:label" android/app/src/*/AndroidManifest.xml || true
+          # NOTE: if a device already has an old build of this app installed
+          # under the same package name (com.businessos.businessos), Android's
+          # own "update this app?" install dialog can keep showing the OLD
+          # cached name for that package until you uninstall once and do a
+          # fresh install - the app's own UI (title bar, launcher icon label)
+          # will already say "ShopHisab" correctly regardless. This is an
+          # Android package-manager caching quirk, not a bug in this build.
 
       - name: Bump compileSdk to 36 in our own app module
         run: |
@@ -50,8 +77,65 @@ jobs:
             fi
           done
 
+      - name: Use a stable signing key (so every build can update the last one)
+        run: |
+          # Without this, Gradle auto-generates a NEW random debug key on every
+          # fresh CI runner. Android refuses to install an APK as an "update"
+          # over an app signed with a different key - it just silently fails,
+          # which looks exactly like "my new build has no changes". Using a
+          # fixed, committed (non-secret) debug key makes every build from
+          # this pipeline share one signature so updates always install cleanly.
+          cp debug.keystore android/app/debug.keystore
+          GRADLE_KTS="android/app/build.gradle.kts"
+          GRADLE_GROOVY="android/app/build.gradle"
+          if [ -f "$GRADLE_KTS" ]; then
+            echo "" >> "$GRADLE_KTS"
+            printf '%s\n' \
+              'android {' \
+              '    signingConfigs {' \
+              '        getByName("debug") {' \
+              '            storeFile = file("debug.keystore")' \
+              '            storePassword = "android"' \
+              '            keyAlias = "androiddebugkey"' \
+              '            keyPassword = "android"' \
+              '        }' \
+              '    }' \
+              '    buildTypes {' \
+              '        getByName("release") {' \
+              '            signingConfig = signingConfigs.getByName("debug")' \
+              '        }' \
+              '    }' \
+              '}' >> "$GRADLE_KTS"
+          elif [ -f "$GRADLE_GROOVY" ]; then
+            echo "" >> "$GRADLE_GROOVY"
+            printf '%s\n' \
+              'android {' \
+              '    signingConfigs {' \
+              '        debug {' \
+              '            storeFile file("debug.keystore")' \
+              '            storePassword "android"' \
+              '            keyAlias "androiddebugkey"' \
+              '            keyPassword "android"' \
+              '        }' \
+              '    }' \
+              '    buildTypes {' \
+              '        release {' \
+              '            signingConfig signingConfigs.debug' \
+              '        }' \
+              '    }' \
+              '}' >> "$GRADLE_GROOVY"
+          fi
+
       - name: Get Flutter/Dart dependencies
         run: flutter pub get
+
+      - name: Generate app icon from assets/icon/app_icon.png
+        run: |
+          dart run flutter_launcher_icons
+          echo "--- verifying adaptive icon XML was regenerated (this is what modern Android actually reads) ---"
+          find android/app/src/main/res -iname "ic_launcher*.xml" -exec echo {} \; -exec cat {} \;
+          echo "--- mipmap directories present ---"
+          find android/app/src/main/res -type d -name "mipmap*"
 
       - name: Bump compileSdk to 36 in every downloaded plugin (fixes file_picker AAR metadata errors)
         run: |
@@ -83,11 +167,13 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: businessos-release-apk
+          name: shophisab-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 5
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: businessos-release-aab
+          name: shophisab-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 5
