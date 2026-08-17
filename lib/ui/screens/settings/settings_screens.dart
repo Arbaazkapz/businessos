@@ -14,6 +14,7 @@ import '../../../providers/app_providers.dart';
 import '../../../services/google_drive_service.dart';
 import '../../widgets/common_widgets.dart';
 import '../business_setup_screen.dart';
+import '../main_shell.dart';
 import '../pin_screens.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -305,34 +306,76 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     }
   }
 
-  Future<String?> _askPassphrase({required String title, required String message}) async {
+  Future<String?> _askPassphrase({
+    required String title,
+    required String message,
+    bool allowBiometric = false,
+    String? backupKey,
+  }) async {
     final ctrl = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'PIN / passphrase'),
-              autofocus: true,
+    final auth = ref.read(authRepositoryProvider);
+    final biometricAvailable = allowBiometric &&
+        await auth.canUseBiometrics() &&
+        await auth.getBackupPassphrase(backupKey) != null;
+
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'PIN / passphrase'),
+                autofocus: !biometricAvailable,
+              ),
+            ],
+          ),
+          actions: [
+            if (biometricAvailable)
+              TextButton.icon(
+                onPressed: () async {
+                  final ok = await auth.authenticateBiometric();
+                  if (!ctx.mounted || !ok) return;
+                  final saved = await auth.getBackupPassphrase(backupKey);
+                  if (saved != null && saved.isNotEmpty) {
+                    Navigator.pop(ctx, saved);
+                  }
+                },
+                icon: const Icon(Icons.fingerprint),
+                label: const Text('Use biometric'),
+              ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Continue'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Continue')),
-        ],
-      ),
+      );
+      return result;
+    } finally {
+      ctrl.dispose();
+    }
+  }
+
+  Future<void> _finishRestore() async {
+    // restoreEncrypted closes the current database. Invalidate it before
+    // navigating so the homepage receives a fresh database connection and
+    // immediately reads the restored business profile/data.
+    ref.invalidate(databaseProvider);
+    ref.read(appLockedProvider.notifier).state = false;
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainShell()),
+      (_) => false,
     );
-    return result;
   }
 
   Future<void> _export() async {
@@ -342,12 +385,14 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       message: hasPin
           ? 'Enter your app PIN. You will need it to restore this backup.'
           : 'You have not set a PIN. Enter a passphrase to encrypt this backup - remember it, you will need it to restore.',
+      allowBiometric: true,
     );
     if (passphrase == null) return;
 
     setState(() => _busy = true);
     try {
       final file = await ref.read(backupRepositoryProvider).exportEncrypted(passphrase: passphrase);
+      await ref.read(authRepositoryProvider).saveBackupPassphrase(p.basename(file.path), passphrase);
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
@@ -392,6 +437,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     final passphrase = await _askPassphrase(
       title: 'Enter backup passphrase',
       message: 'Enter the PIN or passphrase you used when this backup was created.',
+      allowBiometric: true,
+      backupKey: p.basename(result.files.single.path!),
     );
     if (passphrase == null) return;
 
@@ -402,18 +449,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           .read(backupRepositoryProvider)
           .restoreEncrypted(backupFile, passphrase: passphrase);
       if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Restore complete'),
-          content: const Text(
-              'Please close ShopHisab completely and reopen it to load the restored data.'),
-          actions: [
-            FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
-          ],
-        ),
-      );
+      await _finishRestore();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Restore failed: $e')));
@@ -456,6 +492,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       message: hasPin
           ? 'Enter your app PIN. You will need it to restore this backup on another phone.'
           : 'Enter a passphrase to encrypt this backup - remember it, you will need it to restore.',
+      allowBiometric: true,
     );
     if (passphrase == null) return;
 
@@ -470,6 +507,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
             fileBytes: bytes,
             fileName: fileName,
           );
+      await ref.read(authRepositoryProvider).saveBackupPassphrase(fileName, passphrase);
       if (mounted) showSuccessSnack(context, 'Backed up to Google Drive');
       await ref.read(lastBackupProvider.notifier).markBackedUpNow();
     } catch (e) {
@@ -547,6 +585,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     final passphrase = await _askPassphrase(
       title: 'Enter backup passphrase',
       message: 'Enter the PIN or passphrase you used when this backup was created.',
+      allowBiometric: true,
+      backupKey: picked.name,
     );
     if (passphrase == null) return;
 
@@ -562,16 +602,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       await ref.read(backupRepositoryProvider).restoreEncrypted(tempFile, passphrase: passphrase);
       if (await tempFile.exists()) await tempFile.delete();
       if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Restore complete'),
-          content: const Text(
-              'Please close ShopHisab completely and reopen it to load the restored data.'),
-          actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
-        ),
-      );
+      await _finishRestore();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

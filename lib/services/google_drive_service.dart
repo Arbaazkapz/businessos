@@ -45,7 +45,7 @@ class DriveBackupFile {
     return DriveBackupFile(
       id: json['id'] as String,
       name: json['name'] as String,
-      createdTime: DateTime.tryParse(json['createdTime'] as String? ?? '') ?? DateTime.now(),
+      createdTime: (DateTime.tryParse(json['createdTime'] as String? ?? '') ?? DateTime.now()).toLocal(),
       size: json['size'] != null ? int.tryParse(json['size'].toString()) : null,
     );
   }

@@ -538,8 +538,25 @@ class AuthRepository {
   final _storage = const FlutterSecureStorage();
   final _localAuth = LocalAuthentication();
   static const _pinHashKey = 'businessos_pin_hash_v1';
+  static const _latestBackupPassphraseKey = 'businessos_latest_backup_passphrase_v1';
+
+  String _backupPassphraseKey(String backupId) =>
+      'businessos_backup_passphrase_${sha256.convert(utf8.encode(backupId)).toString()}';
 
   String _hash(String pin) => sha256.convert(utf8.encode('pin-salt-v1:$pin')).toString();
+
+  // Backup passphrases are kept only in Android/iOS secure storage so a
+  // successful biometric check can unlock the same backup credential on
+  // this device. A fresh install still requires the user's passphrase.
+  Future<void> saveBackupPassphrase(String backupId, String passphrase) async {
+    await _storage.write(key: _backupPassphraseKey(backupId), value: passphrase);
+    await _storage.write(key: _latestBackupPassphraseKey, value: passphrase);
+  }
+
+  Future<String?> getBackupPassphrase([String? backupId]) =>
+      _storage.read(
+        key: backupId == null ? _latestBackupPassphraseKey : _backupPassphraseKey(backupId),
+      );
 
   Future<bool> hasPin() async => (await _storage.read(key: _pinHashKey)) != null;
 
