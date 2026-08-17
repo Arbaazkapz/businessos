@@ -261,7 +261,9 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                   ? null
                   : () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const BackupRestoreScreen(autoOpenCloudRestore: true),
+                        ),
                       ),
               icon: const Icon(Icons.restore_rounded),
               label: const Text('Already have a backup? Restore old data'),

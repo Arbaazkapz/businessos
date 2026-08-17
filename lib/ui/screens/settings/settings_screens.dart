@@ -279,7 +279,13 @@ class _SectionLabel extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class BackupRestoreScreen extends ConsumerStatefulWidget {
-  const BackupRestoreScreen({super.key});
+  const BackupRestoreScreen({super.key, this.autoOpenCloudRestore = false});
+
+  /// Used only from first-run onboarding. When true, the screen immediately
+  /// connects to Google Drive and loads the user's existing cloud backups,
+  /// so a fresh install can discover an old backup before a local business
+  /// profile exists. Normal Settings usage keeps the existing manual flow.
+  final bool autoOpenCloudRestore;
 
   @override
   ConsumerState<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
@@ -288,6 +294,16 @@ class BackupRestoreScreen extends ConsumerStatefulWidget {
 class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   bool _busy = false;
   GoogleSignInAccount? _driveAccount;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoOpenCloudRestore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _restoreFromDrive();
+      });
+    }
+  }
 
   Future<String?> _askPassphrase({required String title, required String message}) async {
     final ctrl = TextEditingController();
