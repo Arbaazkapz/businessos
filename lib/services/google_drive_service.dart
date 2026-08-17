@@ -12,8 +12,8 @@ import '../core/google_config.dart';
 /// Drive. This also matters practically - broader scopes require Google's
 /// full app-verification review process (weeks, needs a hosted privacy
 /// policy, a review video, etc.), which nobody can complete on your behalf.
-/// drive.file is exempt from that for apps in "Testing" mode.
-const driveBackupScopes = <String>['https://www.googleapis.com/auth/drive.file'];
+/// drive.appdata is the app-specific, non-sensitive Drive scope.
+const driveBackupScopes = <String>['https://www.googleapis.com/auth/drive.appdata'];
 
 /// Initializes GoogleSignIn.instance exactly once (the plugin requires
 /// this and errors if you call initialize() more than once) - wrapping it
@@ -64,7 +64,7 @@ class GoogleDriveService {
   Future<void> signOut(GoogleSignIn signIn) => signIn.disconnect();
 
   /// Gets (requesting if necessary) HTTP headers authorized for the
-  /// drive.file scope. The first time this runs for an account, it will
+  /// drive.appdata scope. The first time this runs for an account, it will
   /// prompt the user to grant access.
   Future<Map<String, String>> _authHeaders(GoogleSignInAccount account) async {
     var headers = await account.authorizationClient.authorizationHeaders(driveBackupScopes);
@@ -85,7 +85,10 @@ class GoogleDriveService {
   }) async {
     final headers = await _authHeaders(account);
     final boundary = 'shophisab-${DateTime.now().microsecondsSinceEpoch}';
-    final metadata = jsonEncode({'name': fileName});
+    final metadata = jsonEncode({
+      'name': fileName,
+      'parents': ['appDataFolder'],
+    });
 
     final body = BytesBuilder()
       ..add(utf8.encode('--$boundary\r\n'))
@@ -109,12 +112,14 @@ class GoogleDriveService {
 
   Future<List<DriveBackupFile>> listBackups(GoogleSignInAccount account) async {
     final headers = await _authHeaders(account);
-    final query = "name contains 'shophisab_backup' and trashed = false";
+    final query =
+        "'appDataFolder' in parents and name contains 'shophisab_backup' and trashed = false";
     final uri = Uri.parse('https://www.googleapis.com/drive/v3/files').replace(
       queryParameters: {
         'q': query,
         'fields': 'files(id,name,createdTime,size)',
         'orderBy': 'createdTime desc',
+        'spaces': 'appDataFolder',
       },
     );
     final response = await http.get(uri, headers: headers);

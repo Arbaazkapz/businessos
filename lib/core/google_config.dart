@@ -30,5 +30,6 @@ class GoogleConfig {
       '295046177554-18urq438nl97hfa90ko2rtdoiap156ka.apps.googleusercontent.com';
 }
 
-bool get isGoogleServerClientIdConfigured =>
-    !googleServerClientId.startsWith('295046177554-18urq438nl97hfa90ko2rtdoiap156ka.apps.googleusercontent.com');
+const String googleServerClientId = GoogleConfig.webClientId;
+
+bool get isGoogleServerClientIdConfigured => googleServerClientId.isNotEmpty;
