@@ -27,9 +27,13 @@ class TodaysCollectionsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final customers = ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
-    final entries = ref.watch(allLedgerEntriesProvider).valueOrNull ?? const <LedgerEntry>[];
-    final invoices = ref.watch(invoicesProvider).valueOrNull ?? const <Invoice>[];
+    final customers =
+        ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
+    final entries =
+        ref.watch(allLedgerEntriesProvider).valueOrNull ??
+        const <LedgerEntry>[];
+    final invoices =
+        ref.watch(invoicesProvider).valueOrNull ?? const <Invoice>[];
 
     String nameFor(String customerId) {
       for (final c in customers) {
@@ -38,27 +42,38 @@ class TodaysCollectionsScreen extends ConsumerWidget {
       return 'Unknown customer';
     }
 
+    final ledgerInvoiceIds = entries
+        .map((e) => e.linkedInvoiceId)
+        .whereType<String>()
+        .toSet();
     final rows = <_CollectionRow>[];
 
     for (final e in entries) {
-      if (e.type == LedgerEntryType.paymentReceived && AppFormatters.isToday(e.entryDate)) {
-        rows.add(_CollectionRow(
-          customerName: nameFor(e.customerId),
-          amount: e.amount,
-          time: e.entryDate,
-          sourceLabel: e.note.isEmpty ? 'Payment received' : e.note,
-        ));
+      if (e.type == LedgerEntryType.paymentReceived &&
+          AppFormatters.isToday(e.entryDate)) {
+        rows.add(
+          _CollectionRow(
+            customerName: nameFor(e.customerId),
+            amount: e.amount,
+            time: e.entryDate,
+            sourceLabel: e.note.isEmpty ? 'Payment received' : e.note,
+          ),
+        );
       }
     }
 
     for (final inv in invoices) {
-      if (inv.status == InvoiceStatus.paid && AppFormatters.isToday(inv.invoiceDate)) {
-        rows.add(_CollectionRow(
-          customerName: inv.customerNameSnapshot,
-          amount: inv.amountPaid,
-          time: inv.invoiceDate,
-          sourceLabel: 'Invoice ${inv.invoiceNumber} - paid in full',
-        ));
+      if (inv.status == InvoiceStatus.paid &&
+          !ledgerInvoiceIds.contains(inv.id) &&
+          AppFormatters.isToday(inv.invoiceDate)) {
+        rows.add(
+          _CollectionRow(
+            customerName: inv.customerNameSnapshot,
+            amount: inv.amountPaid,
+            time: inv.invoiceDate,
+            sourceLabel: 'Invoice ${inv.invoiceNumber} - paid in full',
+          ),
+        );
       }
     }
 
@@ -83,14 +98,14 @@ class TodaysCollectionsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Total collected today',
-                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text(
+                          'Total collected today',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           AppFormatters.money(total),
-                          style: Theme.of(context)
-                              .textTheme
-                              .displaySmall
+                          style: Theme.of(context).textTheme.displaySmall
                               ?.copyWith(color: Colors.green.shade700),
                         ),
                       ],
@@ -98,22 +113,32 @@ class TodaysCollectionsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...rows.map((r) => Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.green.shade50,
-                          child: Icon(Icons.call_received_rounded, color: Colors.green.shade700),
-                        ),
-                        title: Text(r.customerName),
-                        subtitle: Text('${r.sourceLabel}\n${AppFormatters.dateTimeStr(r.time)}'),
-                        isThreeLine: true,
-                        trailing: Text(
-                          AppFormatters.money(r.amount),
-                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.green.shade700),
+                ...rows.map(
+                  (r) => Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green.shade50,
+                        child: Icon(
+                          Icons.call_received_rounded,
+                          color: Colors.green.shade700,
                         ),
                       ),
-                    )),
+                      title: Text(r.customerName),
+                      subtitle: Text(
+                        '${r.sourceLabel}\n${AppFormatters.dateTimeStr(r.time)}',
+                      ),
+                      isThreeLine: true,
+                      trailing: Text(
+                        AppFormatters.money(r.amount),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
     );

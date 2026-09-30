@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_strings.dart';
+import '../core/formatters.dart';
 import '../data/app_database.dart';
 import '../data/repositories.dart';
 
@@ -16,29 +17,38 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-final businessRepositoryProvider =
-    Provider((ref) => BusinessRepository(ref.watch(databaseProvider)));
+final businessRepositoryProvider = Provider(
+  (ref) => BusinessRepository(ref.watch(databaseProvider)),
+);
 
-final customerRepositoryProvider =
-    Provider((ref) => CustomerRepository(ref.watch(databaseProvider)));
+final customerRepositoryProvider = Provider(
+  (ref) => CustomerRepository(ref.watch(databaseProvider)),
+);
 
-final ledgerRepositoryProvider =
-    Provider((ref) => LedgerRepository(ref.watch(databaseProvider)));
+final ledgerRepositoryProvider = Provider(
+  (ref) => LedgerRepository(ref.watch(databaseProvider)),
+);
 
-final productRepositoryProvider =
-    Provider((ref) => ProductRepository(ref.watch(databaseProvider)));
+final productRepositoryProvider = Provider(
+  (ref) => ProductRepository(ref.watch(databaseProvider)),
+);
 
-final invoiceRepositoryProvider = Provider((ref) => InvoiceRepository(
-      ref.watch(databaseProvider),
-      ref.watch(businessRepositoryProvider),
-      ref.watch(productRepositoryProvider),
-      ref.watch(ledgerRepositoryProvider),
-    ));
+final invoiceRepositoryProvider = Provider(
+  (ref) => InvoiceRepository(
+    ref.watch(databaseProvider),
+    ref.watch(businessRepositoryProvider),
+    ref.watch(productRepositoryProvider),
+    ref.watch(ledgerRepositoryProvider),
+  ),
+);
 
-final backupRepositoryProvider =
-    Provider((ref) => BackupRepository(ref.watch(databaseProvider)));
+final backupRepositoryProvider = Provider(
+  (ref) => BackupRepository(ref.watch(databaseProvider)),
+);
 
-final noteRepositoryProvider = Provider((ref) => NoteRepository(ref.watch(databaseProvider)));
+final noteRepositoryProvider = Provider(
+  (ref) => NoteRepository(ref.watch(databaseProvider)),
+);
 
 final authRepositoryProvider = Provider((ref) => AuthRepository());
 
@@ -48,7 +58,10 @@ final authRepositoryProvider = Provider((ref) => AuthRepository());
 // ---------------------------------------------------------------------------
 
 final businessProfileProvider = StreamProvider<BusinessProfile?>((ref) {
-  return ref.watch(businessRepositoryProvider).watchProfile();
+  return ref.watch(businessRepositoryProvider).watchProfile().map((profile) {
+    AppFormatters.currencyCode = profile?.currencyCode ?? 'INR';
+    return profile;
+  });
 });
 
 final customersProvider = StreamProvider<List<Customer>>((ref) {
@@ -61,8 +74,8 @@ final allLedgerEntriesProvider = StreamProvider<List<LedgerEntry>>((ref) {
 
 final ledgerForCustomerProvider =
     StreamProvider.family<List<LedgerEntry>, String>((ref, customerId) {
-  return ref.watch(ledgerRepositoryProvider).watchForCustomer(customerId);
-});
+      return ref.watch(ledgerRepositoryProvider).watchForCustomer(customerId);
+    });
 
 final productsProvider = StreamProvider<List<Product>>((ref) {
   return ref.watch(productRepositoryProvider).watchAll();
@@ -107,15 +120,18 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 }
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) => ThemeModeNotifier());
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  (ref) => ThemeModeNotifier(),
+);
 
 /// True while the PIN/biometric lock screen should be blocking the UI.
 /// Re-evaluated once at cold start in SplashScreen; flips to false after a
 /// successful unlock for the remainder of the session.
 final appLockedProvider = StateProvider<bool>((ref) => true);
 
-final hasPinProvider = FutureProvider<bool>((ref) => ref.watch(authRepositoryProvider).hasPin());
+final hasPinProvider = FutureProvider<bool>(
+  (ref) => ref.watch(authRepositoryProvider).hasPin(),
+);
 
 // ---------------------------------------------------------------------------
 // LANGUAGE (persisted, same pattern as theme mode)
@@ -140,12 +156,17 @@ class LocaleNotifier extends StateNotifier<AppLocale> {
     await prefs.setString(_key, locale == AppLocale.hi ? 'hi' : 'en');
   }
 
-  Future<void> toggle() => setLocale(state == AppLocale.en ? AppLocale.hi : AppLocale.en);
+  Future<void> toggle() =>
+      setLocale(state == AppLocale.en ? AppLocale.hi : AppLocale.en);
 }
 
-final localeProvider = StateNotifierProvider<LocaleNotifier, AppLocale>((ref) => LocaleNotifier());
+final localeProvider = StateNotifierProvider<LocaleNotifier, AppLocale>(
+  (ref) => LocaleNotifier(),
+);
 
-final appStringsProvider = Provider<AppStrings>((ref) => AppStrings(ref.watch(localeProvider)));
+final appStringsProvider = Provider<AppStrings>(
+  (ref) => AppStrings(ref.watch(localeProvider)),
+);
 
 // ---------------------------------------------------------------------------
 // BACKUP REMINDER TRACKING (used by the notifications bell)
@@ -179,4 +200,6 @@ class LastBackupNotifier extends StateNotifier<AsyncValue<DateTime?>> {
 }
 
 final lastBackupProvider =
-    StateNotifierProvider<LastBackupNotifier, AsyncValue<DateTime?>>((ref) => LastBackupNotifier());
+    StateNotifierProvider<LastBackupNotifier, AsyncValue<DateTime?>>(
+      (ref) => LastBackupNotifier(),
+    );

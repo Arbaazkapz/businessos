@@ -10,7 +10,9 @@ class AppTheme {
   AppTheme._();
 
   static const Color _seedLight = Color(0xFF0E6E4E); // deep emerald
-  static const Color _seedDark = Color(0xFF2ECC91); // brighter emerald for dark bg
+  static const Color _seedDark = Color(
+    0xFF2ECC91,
+  ); // brighter emerald for dark bg
 
   static const Color success = Color(0xFF1B8A5A);
   static const Color danger = Color(0xFFD64545);
@@ -55,8 +57,14 @@ class AppTheme {
         ),
       ),
       textTheme: const TextTheme(
-        displaySmall: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
-        headlineMedium: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        displaySmall: TextStyle(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        headlineMedium: TextStyle(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
         headlineSmall: TextStyle(fontWeight: FontWeight.w700),
         titleLarge: TextStyle(fontWeight: FontWeight.w700),
         titleMedium: TextStyle(fontWeight: FontWeight.w600),
@@ -65,7 +73,9 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
@@ -76,7 +86,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: scheme.primary,

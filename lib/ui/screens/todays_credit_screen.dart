@@ -9,7 +9,11 @@ import '../widgets/common_widgets.dart';
 import 'customers/customer_detail_screen.dart';
 
 class _CreditRow {
-  _CreditRow({required this.customer, required this.givenToday, required this.currentBalance});
+  _CreditRow({
+    required this.customer,
+    required this.givenToday,
+    required this.currentBalance,
+  });
   final Customer customer;
   final double givenToday;
   final double currentBalance;
@@ -26,13 +30,21 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final customers = ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
-    final entries = ref.watch(allLedgerEntriesProvider).valueOrNull ?? const <LedgerEntry>[];
+    final customers =
+        ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
+    final entries =
+        ref.watch(allLedgerEntriesProvider).valueOrNull ??
+        const <LedgerEntry>[];
 
     final Map<String, double> givenTodayByCustomer = {};
     for (final e in entries) {
-      if (e.type == LedgerEntryType.creditGiven && AppFormatters.isToday(e.entryDate)) {
-        givenTodayByCustomer.update(e.customerId, (v) => v + e.amount, ifAbsent: () => e.amount);
+      if (e.type == LedgerEntryType.creditGiven &&
+          AppFormatters.isToday(e.entryDate)) {
+        givenTodayByCustomer.update(
+          e.customerId,
+          (v) => v + e.amount,
+          ifAbsent: () => e.amount,
+        );
       }
     }
 
@@ -46,9 +58,16 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
         }
       }
       if (customer == null) return;
-      final balance =
-          LedgerRepository.balanceOf(entries.where((e) => e.customerId == customerId));
-      rows.add(_CreditRow(customer: customer, givenToday: givenToday, currentBalance: balance));
+      final balance = LedgerRepository.balanceOf(
+        entries.where((e) => e.customerId == customerId),
+      );
+      rows.add(
+        _CreditRow(
+          customer: customer,
+          givenToday: givenToday,
+          currentBalance: balance,
+        ),
+      );
     });
 
     rows.sort((a, b) => b.givenToday.compareTo(a.givenToday));
@@ -60,7 +79,8 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
           ? const EmptyState(
               icon: Icons.call_made_rounded,
               title: 'No credit given today',
-              message: 'Customers you extend credit to today will show up here.',
+              message:
+                  'Customers you extend credit to today will show up here.',
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -72,14 +92,14 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Total credit given today',
-                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text(
+                          'Total credit given today',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           AppFormatters.money(totalGivenToday),
-                          style: Theme.of(context)
-                              .textTheme
-                              .displaySmall
+                          style: Theme.of(context).textTheme.displaySmall
                               ?.copyWith(color: Colors.red.shade600),
                         ),
                       ],
@@ -90,10 +110,9 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Text(
                     'Each row shows what was credited today and what that customer currently owes overall. If they\'ve since paid it off, it shows as Cleared - today\'s credit record itself is kept exactly as it happened.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 ...rows.map((r) {
@@ -102,33 +121,50 @@ class TodaysCreditGivenScreen extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: cleared ? Colors.green.shade50 : Colors.orange.shade50,
+                        backgroundColor: cleared
+                            ? Colors.green.shade50
+                            : Colors.orange.shade50,
                         child: Icon(
-                          cleared ? Icons.check_circle_outline : Icons.hourglass_bottom_rounded,
-                          color: cleared ? Colors.green.shade700 : Colors.orange.shade800,
+                          cleared
+                              ? Icons.check_circle_outline
+                              : Icons.hourglass_bottom_rounded,
+                          color: cleared
+                              ? Colors.green.shade700
+                              : Colors.orange.shade800,
                         ),
                       ),
                       title: Text(r.customer.name),
-                      subtitle: Text('Credited today: ${AppFormatters.money(r.givenToday)}'),
+                      subtitle: Text(
+                        'Credited today: ${AppFormatters.money(r.givenToday)}',
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            cleared ? 'Cleared' : AppFormatters.money(r.currentBalance),
+                            cleared
+                                ? 'Cleared'
+                                : AppFormatters.money(r.currentBalance),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: cleared ? Colors.green.shade700 : Colors.orange.shade800,
+                              color: cleared
+                                  ? Colors.green.shade700
+                                  : Colors.orange.shade800,
                             ),
                           ),
                           if (!cleared)
-                            Text('still owes', style: Theme.of(context).textTheme.labelSmall),
+                            Text(
+                              'still owes',
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
                         ],
                       ),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => CustomerDetailScreen(customerId: r.customer.id)),
+                          builder: (_) =>
+                              CustomerDetailScreen(customerId: r.customer.id),
+                        ),
                       ),
                     ),
                   );

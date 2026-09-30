@@ -22,7 +22,9 @@ class BusinessProfiles extends Table {
   TextColumn get phone => text().withDefault(const Constant(''))();
   TextColumn get address => text().withDefault(const Constant(''))();
   TextColumn get gstNumber => text().nullable()();
-  TextColumn get category => text().withDefault(const Constant('General Store'))();
+  TextColumn get category =>
+      text().withDefault(const Constant('General Store'))();
+  TextColumn get currencyCode => text().withDefault(const Constant('INR'))();
   TextColumn get invoicePrefix => text().withDefault(const Constant('INV'))();
   IntColumn get nextInvoiceSeq => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -91,7 +93,8 @@ class Invoices extends Table {
   TextColumn get id => text()();
   TextColumn get invoiceNumber => text()();
   TextColumn get customerId => text().nullable()();
-  TextColumn get customerNameSnapshot => text().withDefault(const Constant('Walk-in Customer'))();
+  TextColumn get customerNameSnapshot =>
+      text().withDefault(const Constant('Walk-in Customer'))();
   DateTimeColumn get invoiceDate => dateTime()();
   DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get subtotal => real()();
@@ -137,26 +140,64 @@ class Notes extends Table {
 // ---------------------------------------------------------------------------
 
 @DriftDatabase(
-  tables: [BusinessProfiles, Customers, LedgerEntries, Products, Invoices, InvoiceItems, Notes],
+  tables: [
+    BusinessProfiles,
+    Customers,
+    LedgerEntries,
+    Products,
+    Invoices,
+    InvoiceItems,
+    Notes,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+  AppDatabase.forExecutor(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(invoices, invoices.amountPaid);
-          }
-          if (from < 3) {
-            await m.createTable(notes);
-          }
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+      await _addIndexes();
+    },
+    onUpgrade: (m, from, to) => transaction(() async {
+      if (from < 2) {
+        await m.addColumn(invoices, invoices.amountPaid);
+        await customStatement(
+          "UPDATE invoices SET amount_paid = total WHERE status = 'paid'",
+        );
+      }
+      if (from < 3) {
+        await m.createTable(notes);
+      }
+      if (from < 4) await _addIndexes();
+      if (from < 5)
+        await m.addColumn(businessProfiles, businessProfiles.currencyCode);
+      await customStatement('PRAGMA user_version = $to');
+    }),
+    beforeOpen: (_) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      await customStatement('PRAGMA busy_timeout = 5000');
+    },
+  );
+
+  Future<void> _addIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS ledger_customer_date ON ledger_entries(customer_id, entry_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS ledger_invoice ON ledger_entries(linked_invoice_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS items_invoice ON invoice_items(invoice_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS invoices_customer_date ON invoices(customer_id, invoice_date)',
+    );
+  }
 
   static QueryExecutor _openConnection() {
     return LazyDatabase(() async {

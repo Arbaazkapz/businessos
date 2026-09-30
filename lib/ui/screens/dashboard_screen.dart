@@ -39,7 +39,10 @@ class DashboardScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(strings.t('quick_add_title'), style: Theme.of(ctx).textTheme.titleLarge),
+              Text(
+                strings.t('quick_add_title'),
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
               const SizedBox(height: 16),
               _ToolTile(
                 icon: Icons.sticky_note_2_outlined,
@@ -47,7 +50,10 @@ class DashboardScreen extends ConsumerWidget {
                 color: Colors.amber.shade700,
                 onTap: () {
                   Navigator.pop(ctx);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const NotepadScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotepadScreen()),
+                  );
                 },
               ),
               const SizedBox(height: 10),
@@ -58,7 +64,9 @@ class DashboardScreen extends ConsumerWidget {
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const CalculatorScreen()));
+                    context,
+                    MaterialPageRoute(builder: (_) => const CalculatorScreen()),
+                  );
                 },
               ),
             ],
@@ -93,20 +101,33 @@ class DashboardScreen extends ConsumerWidget {
     // amounts are NOT included in this second sum - those are already
     // captured via their ledger paymentReceived entry below, so adding them
     // again here would double-count them.
+    final ledgerInvoiceIds = entries
+        .map((e) => e.linkedInvoiceId)
+        .whereType<String>()
+        .toSet();
     final paidInvoiceCollectionsToday = invoices
-        .where((i) => i.status == InvoiceStatus.paid && AppFormatters.isToday(i.invoiceDate))
+        .where(
+          (i) =>
+              i.status == InvoiceStatus.paid &&
+              !ledgerInvoiceIds.contains(i.id) &&
+              AppFormatters.isToday(i.invoiceDate),
+        )
         .fold(0.0, (a, b) => a + b.amountPaid);
     final todaysCollections =
         LedgerRepository.sumToday(entries, LedgerEntryType.paymentReceived) +
-            paidInvoiceCollectionsToday;
-    final todaysCreditGiven = LedgerRepository.sumToday(entries, LedgerEntryType.creditGiven);
+        paidInvoiceCollectionsToday;
+    final todaysCreditGiven = LedgerRepository.sumToday(
+      entries,
+      LedgerEntryType.creditGiven,
+    );
     final totalReceivable = LedgerRepository.totalReceivable(entries);
     final lowStock = ProductRepository.lowStock(products);
 
     // Recent customers = customers behind the most recent ledger activity.
     final recentCustomerIds = <String>[];
     for (final e in entries) {
-      if (!recentCustomerIds.contains(e.customerId)) recentCustomerIds.add(e.customerId);
+      if (!recentCustomerIds.contains(e.customerId))
+        recentCustomerIds.add(e.customerId);
       if (recentCustomerIds.length >= 5) break;
     }
     final recentCustomers = recentCustomerIds
@@ -134,15 +155,25 @@ class DashboardScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(20),
               onTap: () => ref.read(localeProvider.notifier).toggle(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.translate_rounded, size: 16, color: scheme.onSurfaceVariant),
+                    Icon(
+                      Icons.translate_rounded,
+                      size: 16,
+                      color: scheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       locale == AppLocale.hi ? 'हिं' : 'EN',
-                      style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -164,7 +195,10 @@ class DashboardScreen extends ConsumerWidget {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(Icons.notifications_outlined, color: scheme.onSurfaceVariant),
+                    Icon(
+                      Icons.notifications_outlined,
+                      color: scheme.onSurfaceVariant,
+                    ),
                     if (attention.total > 0)
                       Positioned(
                         top: -2,
@@ -175,7 +209,10 @@ class DashboardScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
-                            border: Border.all(color: scheme.surfaceContainerHigh, width: 1.5),
+                            border: Border.all(
+                              color: scheme.surfaceContainerHigh,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -203,10 +240,9 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 2),
             Text(
               '${strings.t('dashboard_welcome')} $businessName',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             SectionHeader(
               '${strings.t('dashboard_today')} - ${AppFormatters.date(DateTime.now())}',
@@ -218,8 +254,11 @@ class DashboardScreen extends ConsumerWidget {
                   onTap: () => _showQuickTools(context, strings),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Icon(Icons.add_rounded,
-                        size: 20, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    child: Icon(
+                      Icons.add_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
               ),
@@ -237,8 +276,12 @@ class DashboardScreen extends ConsumerWidget {
                   value: AppFormatters.moneyWhole(todaysCollections),
                   icon: Icons.savings_rounded,
                   color: Colors.green.shade700,
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const TodaysCollectionsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TodaysCollectionsScreen(),
+                    ),
+                  ),
                 ),
                 DashboardStatCard(
                   label: strings.t('dashboard_money_to_receive'),
@@ -252,15 +295,23 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.call_made_rounded,
                   color: Colors.red.shade600,
                   onTap: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const TodaysCreditGivenScreen())),
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TodaysCreditGivenScreen(),
+                    ),
+                  ),
                 ),
                 DashboardStatCard(
                   label: strings.t('dashboard_low_stock'),
                   value: '${lowStock.length}',
                   icon: Icons.inventory_2_rounded,
                   color: Colors.purple.shade600,
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -272,65 +323,100 @@ class DashboardScreen extends ConsumerWidget {
                   _QuickAction(
                     icon: Icons.person_add_alt_1_rounded,
                     label: strings.t('dashboard_add_customer'),
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const AddEditCustomerScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddEditCustomerScreen(),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   _QuickAction(
                     icon: Icons.receipt_long_rounded,
                     label: strings.t('dashboard_new_invoice'),
                     onTap: () => Navigator.push(
-                        context, MaterialPageRoute(builder: (_) => const CreateInvoiceScreen())),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateInvoiceScreen(),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   _QuickAction(
                     icon: Icons.add_card_rounded,
                     label: strings.t('dashboard_new_entry'),
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const AddLedgerEntryScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddLedgerEntryScreen(),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   _QuickAction(
                     icon: Icons.cloud_upload_outlined,
                     label: strings.t('dashboard_backup'),
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const BackupRestoreScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BackupRestoreScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             if (lowStock.isNotEmpty) ...[
               SectionHeader(strings.t('dashboard_low_stock_alerts')),
-              ...lowStock.take(5).map((p) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                      title: Text(p.name),
-                      subtitle: Text('${p.stockQty.toStringAsFixed(0)} ${p.unit} left'),
+              ...lowStock
+                  .take(5)
+                  .map(
+                    (p) => Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange,
+                        ),
+                        title: Text(p.name),
+                        subtitle: Text(
+                          '${p.stockQty.toStringAsFixed(0)} ${p.unit} left',
+                        ),
+                      ),
                     ),
-                  )),
+                  ),
             ],
             SectionHeader(strings.t('dashboard_recent_customers')),
             if (recentCustomers.isEmpty)
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(20),
-                  child: Text('No activity yet. Add a customer to get started.'),
+                  child: Text(
+                    'No activity yet. Add a customer to get started.',
+                  ),
                 ),
               )
             else
               ...recentCustomers.map((c) {
-                final customerEntries = entries.where((e) => e.customerId == c.id);
+                final customerEntries = entries.where(
+                  (e) => e.customerId == c.id,
+                );
                 final balance = LedgerRepository.balanceOf(customerEntries);
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      child: Text(c.name.isNotEmpty ? c.name[0].toUpperCase() : '?'),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
+                      child: Text(
+                        c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                      ),
                     ),
                     title: Text(c.name),
-                    subtitle: Text(c.phone.isEmpty ? 'No phone number' : c.phone),
+                    subtitle: Text(
+                      c.phone.isEmpty ? 'No phone number' : c.phone,
+                    ),
                     trailing: Text(
                       AppFormatters.money(balance.abs()),
                       style: TextStyle(
@@ -342,7 +428,9 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => CustomerDetailScreen(customerId: c.id)),
+                      MaterialPageRoute(
+                        builder: (_) => CustomerDetailScreen(customerId: c.id),
+                      ),
                     ),
                   ),
                 );
@@ -381,12 +469,20 @@ class _ToolTile extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Icon(icon, color: Colors.white),
               ),
               const SizedBox(width: 16),
-              Text(label,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -400,7 +496,11 @@ class _ToolTile extends StatelessWidget {
 /// taller than the single-line buttons next to it. Every button now gets
 /// the same fixed footprint regardless of label length.
 class _QuickAction extends StatelessWidget {
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -430,7 +530,10 @@ class _QuickAction extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],

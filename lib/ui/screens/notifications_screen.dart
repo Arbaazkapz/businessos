@@ -31,7 +31,8 @@ class AttentionCounts {
   final int overdueInvoices;
   final bool backupPending;
 
-  int get total => pendingCustomers + lowStock + overdueInvoices + (backupPending ? 1 : 0);
+  int get total =>
+      pendingCustomers + lowStock + overdueInvoices + (backupPending ? 1 : 0);
 
   static AttentionCounts compute({
     required List<Customer> customers,
@@ -41,7 +42,9 @@ class AttentionCounts {
     required DateTime? lastBackupAt,
   }) {
     final pending = customers.where((c) {
-      final balance = LedgerRepository.balanceOf(entries.where((e) => e.customerId == c.id));
+      final balance = LedgerRepository.balanceOf(
+        entries.where((e) => e.customerId == c.id),
+      );
       return balance > 0;
     }).length;
 
@@ -49,12 +52,17 @@ class AttentionCounts {
 
     final now = DateTime.now();
     final overdue = invoices
-        .where((i) =>
-            i.status != InvoiceStatus.paid && i.dueDate != null && i.dueDate!.isBefore(now))
+        .where(
+          (i) =>
+              i.status != InvoiceStatus.paid &&
+              i.dueDate != null &&
+              i.dueDate!.isBefore(now),
+        )
         .length;
 
     final backupPending =
-        lastBackupAt == null || now.difference(lastBackupAt).inDays >= _backupReminderDays;
+        lastBackupAt == null ||
+        now.difference(lastBackupAt).inDays >= _backupReminderDays;
 
     return AttentionCounts(
       pendingCustomers: pending,
@@ -66,8 +74,10 @@ class AttentionCounts {
 }
 
 final attentionCountsProvider = Provider<AttentionCounts>((ref) {
-  final customers = ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
-  final entries = ref.watch(allLedgerEntriesProvider).valueOrNull ?? const <LedgerEntry>[];
+  final customers =
+      ref.watch(customersProvider).valueOrNull ?? const <Customer>[];
+  final entries =
+      ref.watch(allLedgerEntriesProvider).valueOrNull ?? const <LedgerEntry>[];
   final products = ref.watch(productsProvider).valueOrNull ?? const <Product>[];
   final invoices = ref.watch(invoicesProvider).valueOrNull ?? const <Invoice>[];
   final lastBackupAt = ref.watch(lastBackupProvider).valueOrNull;
@@ -108,7 +118,11 @@ class NotificationsScreen extends ConsumerWidget {
                         '${counts.pendingCustomers} customer${counts.pendingCustomers == 1 ? '' : 's'} pending',
                     subtitle: 'They still owe you money',
                     onTap: () => Navigator.push(
-                        context, MaterialPageRoute(builder: (_) => const CustomerListScreen())),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CustomerListScreen(),
+                      ),
+                    ),
                   ),
                 if (counts.lowStock > 0)
                   _AttentionCard(
@@ -118,7 +132,11 @@ class NotificationsScreen extends ConsumerWidget {
                         '${counts.lowStock} product${counts.lowStock == 1 ? '' : 's'} low on stock',
                     subtitle: 'Time to restock soon',
                     onTap: () => Navigator.push(
-                        context, MaterialPageRoute(builder: (_) => const ProductListScreen())),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProductListScreen(),
+                      ),
+                    ),
                   ),
                 if (counts.overdueInvoices > 0)
                   _AttentionCard(
@@ -128,7 +146,11 @@ class NotificationsScreen extends ConsumerWidget {
                         '${counts.overdueInvoices} invoice${counts.overdueInvoices == 1 ? '' : 's'} overdue',
                     subtitle: 'Past their due date and still unpaid',
                     onTap: () => Navigator.push(
-                        context, MaterialPageRoute(builder: (_) => const InvoiceListScreen())),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const InvoiceListScreen(),
+                      ),
+                    ),
                   ),
                 if (counts.backupPending)
                   _AttentionCard(
@@ -138,8 +160,12 @@ class NotificationsScreen extends ConsumerWidget {
                     subtitle: lastBackupAt == null
                         ? "You haven't backed up yet"
                         : 'Last backup was ${AppFormatters.date(lastBackupAt)}',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const BackupRestoreScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BackupRestoreScreen(),
+                      ),
+                    ),
                   ),
               ],
             ),

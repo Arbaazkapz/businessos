@@ -12,7 +12,11 @@ import '../widgets/common_widgets.dart';
 class NotepadScreen extends ConsumerWidget {
   const NotepadScreen({super.key});
 
-  Future<void> _openEditor(BuildContext context, WidgetRef ref, {Note? existing}) async {
+  Future<void> _openEditor(
+    BuildContext context,
+    WidgetRef ref, {
+    Note? existing,
+  }) async {
     final ctrl = TextEditingController(text: existing?.content ?? '');
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -29,15 +33,19 @@ class NotepadScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(existing == null ? 'New note' : 'Edit note',
-                style: Theme.of(ctx).textTheme.titleLarge),
+            Text(
+              existing == null ? 'New note' : 'Edit note',
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
             const SizedBox(height: 14),
             TextField(
               controller: ctrl,
               autofocus: true,
               maxLines: 6,
               minLines: 3,
-              decoration: const InputDecoration(hintText: 'Remember, buy milk, call supplier...'),
+              decoration: const InputDecoration(
+                hintText: 'Remember, buy milk, call supplier...',
+              ),
             ),
             const SizedBox(height: 16),
             FilledButton(
@@ -57,7 +65,10 @@ class NotepadScreen extends ConsumerWidget {
       await repo.update(existing.id, result);
     }
     if (context.mounted) {
-      showSuccessSnack(context, existing == null ? 'Note added' : 'Note updated');
+      showSuccessSnack(
+        context,
+        existing == null ? 'Note added' : 'Note updated',
+      );
     }
   }
 
@@ -101,8 +112,11 @@ class NotepadScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                confirmDismiss: (_) => confirmDialog(context,
-                    title: 'Delete note?', message: 'This cannot be undone.'),
+                confirmDismiss: (_) => confirmDialog(
+                  context,
+                  title: 'Delete note?',
+                  message: 'This cannot be undone.',
+                ),
                 onDismissed: (_) {
                   ref.read(noteRepositoryProvider).delete(note.id);
                   showSuccessSnack(context, 'Note deleted');
@@ -111,11 +125,17 @@ class NotepadScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
                     onTap: () => _openEditor(context, ref, existing: note),
-                    title: Text(note.content, maxLines: 4, overflow: TextOverflow.ellipsis),
+                    title: Text(
+                      note.content,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text(AppFormatters.dateTimeStr(note.updatedAt),
-                          style: Theme.of(context).textTheme.labelSmall),
+                      child: Text(
+                        AppFormatters.dateTimeStr(note.updatedAt),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
                     ),
                   ),
                 ),

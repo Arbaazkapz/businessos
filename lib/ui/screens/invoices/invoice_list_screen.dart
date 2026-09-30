@@ -30,7 +30,9 @@ class InvoiceListScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Invoices')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const CreateInvoiceScreen())),
+          context,
+          MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+        ),
         icon: const Icon(Icons.add),
         label: const Text('New Invoice'),
       ),
@@ -45,7 +47,9 @@ class InvoiceListScreen extends ConsumerWidget {
               message: 'Create your first invoice - GST or non-GST, with a PDF you can share.',
               actionLabel: 'New Invoice',
               onAction: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const CreateInvoiceScreen())),
+                context,
+                MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+              ),
             );
           }
           return ListView.builder(
@@ -55,26 +59,41 @@ class InvoiceListScreen extends ConsumerWidget {
               final inv = invoices[i];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: _statusColor(inv.status).withValues(alpha: 0.15),
-                  child: Icon(Icons.receipt_outlined, color: _statusColor(inv.status)),
+                  backgroundColor: _statusColor(inv.status)
+                      .withValues(alpha: 0.15),
+                  child: Icon(
+                    Icons.receipt_outlined,
+                    color: _statusColor(inv.status),
+                  ),
                 ),
                 title: Text(inv.invoiceNumber),
-                subtitle: Text('${inv.customerNameSnapshot} · ${AppFormatters.date(inv.invoiceDate)}'),
+                subtitle: Text(
+                  '${inv.customerNameSnapshot} · ${AppFormatters.date(inv.invoiceDate)}',
+                ),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(AppFormatters.money(inv.total),
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      AppFormatters.money(inv.total),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     Text(
                       inv.status.name.toUpperCase(),
                       style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor(inv.status)),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _statusColor(inv.status),
+                      ),
                     ),
                   ],
                 ),
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id))),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InvoicePreviewScreen(invoiceId: inv.id),
+                  ),
+                ),
               );
             },
           );

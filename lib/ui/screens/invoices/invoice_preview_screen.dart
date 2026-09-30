@@ -10,9 +10,13 @@ class InvoicePreviewScreen extends ConsumerWidget {
   const InvoicePreviewScreen({super.key, required this.invoiceId});
   final String invoiceId;
 
-  Future<(BusinessProfile, Invoice, List<InvoiceItem>)> _load(WidgetRef ref) async {
+  Future<(BusinessProfile, Invoice, List<InvoiceItem>)> _load(
+    WidgetRef ref,
+  ) async {
     final business = await ref.read(businessRepositoryProvider).getProfile();
-    final invoice = await ref.read(invoiceRepositoryProvider).getById(invoiceId);
+    final invoice = await ref
+        .read(invoiceRepositoryProvider)
+        .getById(invoiceId);
     final items = await ref.read(invoiceRepositoryProvider).itemsFor(invoiceId);
     if (business == null || invoice == null) {
       throw StateError('Invoice not found');

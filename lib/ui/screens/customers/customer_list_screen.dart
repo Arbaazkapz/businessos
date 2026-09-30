@@ -36,7 +36,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       appBar: AppBar(title: const Text('Customers')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const AddEditCustomerScreen())),
+          context,
+          MaterialPageRoute(builder: (_) => const AddEditCustomerScreen()),
+        ),
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text('Add Customer'),
       ),
@@ -61,21 +63,30 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 final filtered = _query.isEmpty
                     ? customers
                     : customers
-                        .where((c) =>
-                            c.name.toLowerCase().contains(_query) || c.phone.contains(_query))
-                        .toList();
+                          .where(
+                            (c) =>
+                                c.name.toLowerCase().contains(_query) ||
+                                c.phone.contains(_query),
+                          )
+                          .toList();
 
                 if (filtered.isEmpty) {
                   return EmptyState(
                     icon: Icons.people_outline,
-                    title: customers.isEmpty ? 'No customers yet' : 'No matches',
+                    title: customers.isEmpty
+                        ? 'No customers yet'
+                        : 'No matches',
                     message: customers.isEmpty
                         ? 'Add your first customer to start tracking their khata.'
                         : 'Try a different search term.',
                     actionLabel: customers.isEmpty ? 'Add Customer' : null,
                     onAction: customers.isEmpty
-                        ? () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const AddEditCustomerScreen()))
+                        ? () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddEditCustomerScreen(),
+                            ),
+                          )
                         : null,
                   );
                 }
@@ -85,17 +96,22 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final c = filtered[i];
-                    final balance =
-                        LedgerRepository.balanceOf(entries.where((e) => e.customerId == c.id));
+                    final balance = LedgerRepository.balanceOf(
+                      entries.where((e) => e.customerId == c.id),
+                    );
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: c.isFavourite
                             ? Colors.amber.shade200
                             : Theme.of(context).colorScheme.primaryContainer,
-                        child: Text(c.name.isNotEmpty ? c.name[0].toUpperCase() : '?'),
+                        child: Text(
+                          c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                        ),
                       ),
                       title: Text(c.name),
-                      subtitle: Text(c.phone.isEmpty ? 'No phone number' : c.phone),
+                      subtitle: Text(
+                        c.phone.isEmpty ? 'No phone number' : c.phone,
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -106,17 +122,26 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                               fontWeight: FontWeight.w700,
                               color: balance > 0
                                   ? Colors.orange.shade800
-                                  : (balance < 0 ? Colors.green.shade700 : Colors.grey),
+                                  : (balance < 0
+                                        ? Colors.green.shade700
+                                        : Colors.grey),
                             ),
                           ),
                           Text(
-                            balance > 0 ? 'to receive' : (balance < 0 ? 'you owe' : 'settled'),
+                            balance > 0
+                                ? 'to receive'
+                                : (balance < 0 ? 'you owe' : 'settled'),
                             style: Theme.of(context).textTheme.labelSmall,
                           ),
                         ],
                       ),
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => CustomerDetailScreen(customerId: c.id))),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CustomerDetailScreen(customerId: c.id),
+                        ),
+                      ),
                     );
                   },
                 );

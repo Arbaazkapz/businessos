@@ -5,11 +5,27 @@ import 'package:intl/intl.dart';
 class AppFormatters {
   AppFormatters._();
 
-  static final NumberFormat _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
-
-  static final NumberFormat _currencyWhole =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+  static const currencies = {
+    'INR': 'Indian rupee',
+    'USD': 'US dollar',
+    'EUR': 'Euro',
+    'GBP': 'British pound',
+    'AED': 'UAE dirham',
+    'CAD': 'Canadian dollar',
+    'AUD': 'Australian dollar',
+  };
+  static String currencyCode = 'INR';
+  static final Map<String, NumberFormat> _currencyFormats = {};
+  static NumberFormat _format(int digits) => _currencyFormats.putIfAbsent(
+    '$currencyCode:$digits',
+    () => NumberFormat.currency(
+      locale: currencyCode == 'INR' ? 'en_IN' : 'en_US',
+      symbol: currencyCode == 'INR' ? '₹' : '$currencyCode ',
+      decimalDigits: digits,
+    ),
+  );
+  static NumberFormat get _currency => _format(2);
+  static NumberFormat get _currencyWhole => _format(0);
 
   static final DateFormat _date = DateFormat('dd MMM yyyy');
   static final DateFormat _dateTime = DateFormat('dd MMM yyyy, hh:mm a');

@@ -13,7 +13,8 @@ class AddLedgerEntryScreen extends ConsumerStatefulWidget {
   final String? customerId;
 
   @override
-  ConsumerState<AddLedgerEntryScreen> createState() => _AddLedgerEntryScreenState();
+  ConsumerState<AddLedgerEntryScreen> createState() =>
+      _AddLedgerEntryScreenState();
 }
 
 class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
@@ -49,15 +50,19 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCustomerId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Please select a customer')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a customer')));
       return;
     }
     setState(() => _saving = true);
     try {
-      await ref.read(ledgerRepositoryProvider).addEntry(
+      await ref
+          .read(ledgerRepositoryProvider)
+          .addEntry(
             customerId: _selectedCustomerId!,
             type: _type,
             amount: double.parse(_amountCtrl.text.trim()),
@@ -66,8 +71,16 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
           );
       if (!mounted) return;
       showSuccessSnack(
-          context, _type == LedgerEntryType.creditGiven ? 'Credit entry saved' : 'Payment recorded');
+        context,
+        _type == LedgerEntryType.creditGiven
+            ? 'Credit entry saved'
+            : 'Payment recorded',
+      );
       Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -92,7 +105,10 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
                   initialValue: _selectedCustomerId,
                   decoration: const InputDecoration(labelText: 'Customer *'),
                   items: customers
-                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                      .map(
+                        (c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _selectedCustomerId = v),
                   validator: (v) => v == null ? 'Required' : null,
@@ -116,10 +132,19 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
               onSelectionChanged: (s) => setState(() => _type = s.first),
             ),
             const SizedBox(height: 16),
+            const Text(
+              'Payments settle this customer’s oldest unpaid invoices first. Any extra is kept as customer credit.',
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _amountCtrl,
-              decoration: const InputDecoration(labelText: 'Amount *', prefixText: '₹ '),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Amount *',
+                prefixText: '${AppFormatters.currencyCode} ',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               validator: (v) {
                 final val = double.tryParse(v?.trim() ?? '');
                 if (val == null || val <= 0) return 'Enter a valid amount';
@@ -137,7 +162,10 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.calendar_today_outlined),
               title: Text(AppFormatters.date(_date)),
-              trailing: TextButton(onPressed: _pickDate, child: const Text('Change')),
+              trailing: TextButton(
+                onPressed: _pickDate,
+                child: const Text('Change'),
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(
@@ -146,7 +174,11 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Text('Save Entry'),
             ),
           ],

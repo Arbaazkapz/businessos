@@ -18,6 +18,7 @@ class ProductListScreen extends ConsumerStatefulWidget {
 class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
+  bool _lowOnly = false;
 
   @override
   void dispose() {
@@ -25,15 +26,99 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     super.dispose();
   }
 
+  Future<void> _adjust(Product product) async {
+    final controller = TextEditingController(text: '1');
+    final form = GlobalKey<FormState>();
+    final delta = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Adjust ${product.name}'),
+        content: Form(
+          key: form,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Current stock: ${product.stockQty} ${product.unit}'),
+              TextFormField(
+                controller: controller,
+                validator: (text) {
+                  final n = double.tryParse(text ?? '');
+                  return n == null || !n.isFinite || n <= 0
+                      ? 'Enter a positive quantity'
+                      : null;
+                },
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Quantity (${product.unit})',
+                ),
+              ),
+              const Text(
+                'Use adjustments for deliveries or stock corrections. Sales reduce stock through invoices.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () {
+              if (!form.currentState!.validate()) return;
+              final n = double.tryParse(controller.text);
+              if (n != null && n.isFinite && n > 0) Navigator.pop(ctx, -n);
+            },
+            icon: const Icon(Icons.remove),
+            label: const Text('Remove'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (!form.currentState!.validate()) return;
+              final n = double.tryParse(controller.text);
+              if (n != null && n.isFinite && n > 0) Navigator.pop(ctx, n);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (delta == null || !mounted) return;
+    try {
+      await ref.read(productRepositoryProvider).adjustStock(product.id, delta);
+      if (mounted) showSuccessSnack(context, 'Stock updated');
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Products')),
+      appBar: AppBar(
+        title: const Text('Products'),
+        actions: [
+          FilterChip(
+            label: const Text('Low stock'),
+            selected: _lowOnly,
+            onSelected: (v) => setState(() => _lowOnly = v),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEditProductScreen())),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+        ),
         icon: const Icon(Icons.add),
         label: const Text('Add Product'),
       ),
@@ -55,14 +140,16 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
               data: (products) {
-                final filtered = _query.isEmpty
-                    ? products
-                    : products
-                        .where((p) =>
-                            p.name.toLowerCase().contains(_query) ||
-                            p.category.toLowerCase().contains(_query) ||
-                            (p.barcode ?? '').contains(_query))
-                        .toList();
+                final filtered = products
+                    .where(
+                      (p) =>
+                          (!_lowOnly || p.stockQty <= p.lowStockThreshold) &&
+                          (_query.isEmpty ||
+                              p.name.toLowerCase().contains(_query) ||
+                              p.category.toLowerCase().contains(_query) ||
+                              (p.barcode ?? '').toLowerCase().contains(_query)),
+                    )
+                    .toList();
 
                 if (filtered.isEmpty) {
                   return EmptyState(
@@ -73,8 +160,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                         : 'Try a different search term.',
                     actionLabel: products.isEmpty ? 'Add Product' : null,
                     onAction: products.isEmpty
-                        ? () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const AddEditProductScreen()))
+                        ? () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddEditProductScreen(),
+                            ),
+                          )
                         : null,
                   );
                 }
@@ -90,18 +181,28 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                         backgroundColor: low
                             ? Colors.orange.shade100
                             : Theme.of(context).colorScheme.primaryContainer,
-                        child: Icon(low ? Icons.warning_amber_rounded : Icons.inventory_2_outlined,
-                            color: low ? Colors.orange.shade800 : null),
+                        child: Icon(
+                          low
+                              ? Icons.warning_amber_rounded
+                              : Icons.inventory_2_outlined,
+                          color: low ? Colors.orange.shade800 : null,
+                        ),
                       ),
                       title: Text(p.name),
                       subtitle: Text(
-                          '${p.category.isEmpty ? 'Uncategorised' : p.category} · ${p.stockQty.toStringAsFixed(p.stockQty % 1 == 0 ? 0 : 1)} ${p.unit} in stock'),
-                      trailing: Text(
-                        AppFormatters.money(p.sellingPrice),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        '${p.category.isEmpty ? 'Uncategorised' : p.category} · ${AppFormatters.money(p.sellingPrice)} · ${p.stockQty.toStringAsFixed(p.stockQty % 1 == 0 ? 0 : 1)} ${p.unit} in stock',
                       ),
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => AddEditProductScreen(existing: p))),
+                      trailing: IconButton(
+                        tooltip: 'Add or remove stock',
+                        icon: const Icon(Icons.exposure_rounded),
+                        onPressed: () => _adjust(p),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddEditProductScreen(existing: p),
+                        ),
+                      ),
                     );
                   },
                 );
@@ -119,7 +220,8 @@ class AddEditProductScreen extends ConsumerStatefulWidget {
   final Product? existing;
 
   @override
-  ConsumerState<AddEditProductScreen> createState() => _AddEditProductScreenState();
+  ConsumerState<AddEditProductScreen> createState() =>
+      _AddEditProductScreenState();
 }
 
 class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
@@ -143,10 +245,16 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
     _nameCtrl = TextEditingController(text: p?.name ?? '');
     _categoryCtrl = TextEditingController(text: p?.category ?? '');
     _barcodeCtrl = TextEditingController(text: p?.barcode ?? '');
-    _purchasePriceCtrl = TextEditingController(text: p?.purchasePrice.toString() ?? '');
-    _sellingPriceCtrl = TextEditingController(text: p?.sellingPrice.toString() ?? '');
+    _purchasePriceCtrl = TextEditingController(
+      text: p?.purchasePrice.toString() ?? '',
+    );
+    _sellingPriceCtrl = TextEditingController(
+      text: p?.sellingPrice.toString() ?? '',
+    );
     _stockCtrl = TextEditingController(text: p?.stockQty.toString() ?? '0');
-    _lowStockCtrl = TextEditingController(text: p?.lowStockThreshold.toString() ?? '5');
+    _lowStockCtrl = TextEditingController(
+      text: p?.lowStockThreshold.toString() ?? '5',
+    );
     _unit = p?.unit ?? _units.first;
   }
 
@@ -172,7 +280,9 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
           widget.existing!.id,
           name: _nameCtrl.text.trim(),
           category: _categoryCtrl.text.trim(),
-          barcode: _barcodeCtrl.text.trim().isEmpty ? null : _barcodeCtrl.text.trim(),
+          barcode: _barcodeCtrl.text.trim().isEmpty
+              ? null
+              : _barcodeCtrl.text.trim(),
           purchasePrice: double.tryParse(_purchasePriceCtrl.text.trim()) ?? 0,
           sellingPrice: double.tryParse(_sellingPriceCtrl.text.trim()) ?? 0,
           stockQty: double.tryParse(_stockCtrl.text.trim()) ?? 0,
@@ -183,7 +293,9 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         await repo.create(
           name: _nameCtrl.text.trim(),
           category: _categoryCtrl.text.trim(),
-          barcode: _barcodeCtrl.text.trim().isEmpty ? null : _barcodeCtrl.text.trim(),
+          barcode: _barcodeCtrl.text.trim().isEmpty
+              ? null
+              : _barcodeCtrl.text.trim(),
           purchasePrice: double.tryParse(_purchasePriceCtrl.text.trim()) ?? 0,
           sellingPrice: double.tryParse(_sellingPriceCtrl.text.trim()) ?? 0,
           stockQty: double.tryParse(_stockCtrl.text.trim()) ?? 0,
@@ -192,16 +304,26 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         );
       }
       if (!mounted) return;
-      showSuccessSnack(context, _isEditing ? 'Product updated' : 'Product added');
+      showSuccessSnack(
+        context,
+        _isEditing ? 'Product updated' : 'Product added',
+      );
       Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _delete() async {
-    final ok = await confirmDialog(context,
-        title: 'Delete product?', message: 'This cannot be undone.');
+    final ok = await confirmDialog(
+      context,
+      title: 'Delete product?',
+      message: 'This cannot be undone.',
+    );
     if (ok) {
       await ref.read(productRepositoryProvider).delete(widget.existing!.id);
       if (mounted) {
@@ -218,7 +340,10 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
         title: Text(_isEditing ? 'Edit Product' : 'Add Product'),
         actions: [
           if (_isEditing)
-            IconButton(icon: const Icon(Icons.delete_outline), onPressed: _delete),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+            ),
         ],
       ),
       body: Form(
@@ -229,7 +354,8 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
             TextFormField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Product name *'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 14),
@@ -241,7 +367,9 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _barcodeCtrl,
-              decoration: const InputDecoration(labelText: 'Barcode (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Barcode (optional)',
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -249,17 +377,29 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _purchasePriceCtrl,
-                    decoration: const InputDecoration(labelText: 'Purchase price', prefixText: '₹ '),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Purchase price',
+                      prefixText: '${AppFormatters.currencyCode} ',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
                     controller: _sellingPriceCtrl,
-                    decoration: const InputDecoration(labelText: 'Selling price *', prefixText: '₹ '),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: (v) => (double.tryParse(v?.trim() ?? '') == null) ? 'Required' : null,
+                    decoration: InputDecoration(
+                      labelText: 'Selling price *',
+                      prefixText: '${AppFormatters.currencyCode} ',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) => (double.tryParse(v?.trim() ?? '') == null)
+                        ? 'Required'
+                        : null,
                   ),
                 ),
               ],
@@ -270,8 +410,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _stockCtrl,
-                    decoration: const InputDecoration(labelText: 'Current stock'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Current stock',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -279,7 +423,9 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                   child: DropdownButtonFormField<String>(
                     initialValue: _unit,
                     decoration: const InputDecoration(labelText: 'Unit'),
-                    items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                    items: _units
+                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                        .toList(),
                     onChanged: (v) => setState(() => _unit = v ?? _unit),
                   ),
                 ),
@@ -288,8 +434,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _lowStockCtrl,
-              decoration: const InputDecoration(labelText: 'Low stock alert threshold'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Low stock alert threshold',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 28),
             FilledButton(
@@ -298,7 +448,11 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : Text(_isEditing ? 'Save Changes' : 'Add Product'),
             ),
           ],

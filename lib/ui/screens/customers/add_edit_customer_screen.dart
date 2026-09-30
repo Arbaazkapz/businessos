@@ -1,3 +1,5 @@
+import '../../../core/formatters.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,7 +13,8 @@ class AddEditCustomerScreen extends ConsumerStatefulWidget {
   final Customer? existing;
 
   @override
-  ConsumerState<AddEditCustomerScreen> createState() => _AddEditCustomerScreenState();
+  ConsumerState<AddEditCustomerScreen> createState() =>
+      _AddEditCustomerScreenState();
 }
 
 class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
@@ -34,7 +37,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     _phoneCtrl = TextEditingController(text: e?.phone ?? '');
     _addressCtrl = TextEditingController(text: e?.address ?? '');
     _gstCtrl = TextEditingController(text: e?.gstNumber ?? '');
-    _creditLimitCtrl = TextEditingController(text: e?.creditLimit?.toString() ?? '');
+    _creditLimitCtrl = TextEditingController(
+      text: e?.creditLimit?.toString() ?? '',
+    );
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
   }
 
@@ -65,6 +70,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
           address: _addressCtrl.text.trim(),
           gstNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim(),
           creditLimit: creditLimit,
+          clearCreditLimit: _creditLimitCtrl.text.trim().isEmpty,
           notes: _notesCtrl.text.trim(),
         );
       } else {
@@ -82,8 +88,15 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
       // guaranteed-fresh Customer immediately, with no race condition.
       final saved = await repo.getById(customerId);
       if (!mounted) return;
-      showSuccessSnack(context, _isEditing ? 'Customer updated' : 'Customer added');
+      showSuccessSnack(
+        context,
+        _isEditing ? 'Customer updated' : 'Customer added',
+      );
       Navigator.pop(context, saved);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -92,7 +105,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Edit Customer' : 'Add Customer')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Edit Customer' : 'Add Customer'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -101,7 +116,8 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             TextFormField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Full name *'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 14),
@@ -125,8 +141,13 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _creditLimitCtrl,
-              decoration: const InputDecoration(labelText: 'Credit limit (optional)', prefixText: '₹ '),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Credit limit (optional)',
+                prefixText: '${AppFormatters.currencyCode} ',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -141,7 +162,11 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : Text(_isEditing ? 'Save Changes' : 'Add Customer'),
             ),
           ],

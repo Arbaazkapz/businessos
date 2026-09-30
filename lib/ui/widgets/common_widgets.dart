@@ -39,21 +39,24 @@ class DashboardStatCard extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration:
-                        BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Icon(icon, color: Colors.white, size: 20),
                   ),
                   if (onTap != null)
-                    Icon(Icons.chevron_right_rounded,
-                        color: color.withValues(alpha: 0.6), size: 20),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: color.withValues(alpha: 0.6),
+                      size: 20,
+                    ),
                 ],
               ),
               const SizedBox(height: 14),
               Text(
                 value,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
+                style: Theme.of(context).textTheme.headlineSmall
                     ?.copyWith(color: color, fontWeight: FontWeight.w800),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -62,9 +65,9 @@ class DashboardStatCard extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -101,14 +104,15 @@ class EmptyState extends StatelessWidget {
           children: [
             Icon(icon, size: 56, color: scheme.outline),
             const SizedBox(height: 16),
-            Text(title,
-                style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
+              style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: scheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
@@ -156,10 +160,15 @@ Future<bool> confirmDialog(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           style: danger
-              ? FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error)
+              ? FilledButton.styleFrom(
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                )
               : null,
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(confirmLabel),

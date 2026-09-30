@@ -7,7 +7,8 @@ import '../widgets/common_widgets.dart';
 import 'main_shell.dart';
 
 class PinLockScreen extends ConsumerStatefulWidget {
-  const PinLockScreen({super.key});
+  const PinLockScreen({super.key, this.returnToPrevious = false});
+  final bool returnToPrevious;
 
   @override
   ConsumerState<PinLockScreen> createState() => _PinLockScreenState();
@@ -17,6 +18,7 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
   final _pinCtrl = TextEditingController();
   String? _error;
   bool _checking = false;
+  bool _unlocked = false;
 
   @override
   void initState() {
@@ -25,34 +27,65 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
   }
 
   Future<void> _tryBiometric() async {
-    final auth = ref.read(authRepositoryProvider);
-    if (await auth.canUseBiometrics()) {
-      final ok = await auth.authenticateBiometric();
-      if (ok) _unlock();
+    if (_checking || _unlocked) return;
+    setState(() => _checking = true);
+    try {
+      final auth = ref.read(authRepositoryProvider);
+      if (await auth.canUseBiometrics() && await auth.authenticateBiometric()) {
+        _unlock();
+      }
+    } catch (_) {
+      if (mounted)
+        setState(
+          () => _error = 'Biometric unlock is unavailable. Enter your PIN.',
+        );
+    } finally {
+      if (mounted) setState(() => _checking = false);
     }
   }
 
   Future<void> _submitPin() async {
+    if (_checking || _unlocked) return;
     setState(() {
       _checking = true;
       _error = null;
     });
-    final ok = await ref.read(authRepositoryProvider).verifyPin(_pinCtrl.text.trim());
-    if (!mounted) return;
-    if (ok) {
-      _unlock();
-    } else {
-      setState(() {
-        _error = 'Incorrect PIN';
-        _checking = false;
-      });
-      _pinCtrl.clear();
+    try {
+      final auth = ref.read(authRepositoryProvider);
+      final ok = await auth.verifyPin(_pinCtrl.text.trim());
+      final cooldown = await auth.pinCooldownSeconds();
+      if (!mounted) return;
+      if (ok) {
+        _unlock();
+      } else {
+        setState(
+          () => _error = cooldown > 0
+              ? 'Too many attempts. Try in $cooldown seconds.'
+              : 'Incorrect PIN',
+        );
+        _pinCtrl.clear();
+      }
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'Could not unlock. Please try again.');
+    } finally {
+      if (mounted) setState(() => _checking = false);
     }
   }
 
   void _unlock() {
+    if (!mounted || _unlocked) return;
+    _unlocked = true;
+    if (widget.returnToPrevious) {
+      ref.read(appLockedProvider.notifier).state = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+      return;
+    }
     ref.read(appLockedProvider.notifier).state = false;
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
   }
 
   @override
@@ -64,49 +97,62 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.lock_rounded, size: 48, color: scheme.primary),
-                const SizedBox(height: 16),
-                Text('Enter PIN', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _pinCtrl,
-                  autofocus: true,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 28, letterSpacing: 12),
-                  decoration: InputDecoration(errorText: _error, counterText: ''),
-                  onSubmitted: (_) => _submitPin(),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _checking ? null : _submitPin,
-                  child: _checking
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Unlock'),
-                ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: _tryBiometric,
-                  icon: const Icon(Icons.fingerprint),
-                  label: const Text('Use fingerprint / face unlock'),
-                ),
-              ],
+    return PopScope(
+      canPop: !ref.watch(appLockedProvider),
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_rounded, size: 48, color: scheme.primary),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Enter PIN',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _pinCtrl,
+                    autofocus: true,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 28, letterSpacing: 12),
+                    decoration: InputDecoration(
+                      errorText: _error,
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => _submitPin(),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: _checking ? null : _submitPin,
+                    child: _checking
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Unlock'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: _checking ? null : _tryBiometric,
+                    icon: const Icon(Icons.fingerprint),
+                    label: const Text('Use fingerprint / face unlock'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -142,10 +188,17 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       _saving = true;
       _error = null;
     });
-    await ref.read(authRepositoryProvider).setPin(_pinCtrl.text.trim());
-    if (!mounted) return;
-    showSuccessSnack(context, 'PIN saved');
-    Navigator.of(context).pop(true);
+    try {
+      await ref.read(authRepositoryProvider).setPin(_pinCtrl.text.trim());
+      if (!mounted) return;
+      showSuccessSnack(context, 'PIN saved');
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'Could not save PIN. Please try again.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -164,8 +217,10 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Choose a 4-6 digit PIN to lock ShopHisab.',
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              'Choose a 4-6 digit PIN to lock ShopHisab.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _pinCtrl,
@@ -186,7 +241,10 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(6),
               ],
-              decoration: InputDecoration(labelText: 'Confirm PIN', errorText: _error),
+              decoration: InputDecoration(
+                labelText: 'Confirm PIN',
+                errorText: _error,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(
@@ -195,7 +253,11 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Text('Save PIN'),
             ),
           ],

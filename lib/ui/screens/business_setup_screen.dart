@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/country_codes.dart';
+import '../../core/formatters.dart';
 import '../../data/app_database.dart';
 import '../../providers/app_providers.dart';
 import '../widgets/common_widgets.dart';
@@ -37,7 +38,8 @@ class BusinessSetupScreen extends ConsumerStatefulWidget {
   final BusinessProfile? existing;
 
   @override
-  ConsumerState<BusinessSetupScreen> createState() => _BusinessSetupScreenState();
+  ConsumerState<BusinessSetupScreen> createState() =>
+      _BusinessSetupScreenState();
 }
 
 class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
@@ -50,6 +52,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
   late String _category;
   late CountryCode _country;
   bool _saving = false;
+  String _currency = 'INR';
 
   bool get _isEditing => widget.existing != null;
 
@@ -57,6 +60,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
   void initState() {
     super.initState();
     final p = widget.existing;
+    _currency = p?.currencyCode ?? 'INR';
     _businessNameCtrl = TextEditingController(text: p?.businessName ?? '');
     _ownerNameCtrl = TextEditingController(text: p?.ownerName ?? '');
     _addressCtrl = TextEditingController(text: p?.address ?? '');
@@ -104,10 +108,12 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
 
   String? _validateGst(String? v) {
     final text = v?.trim().toUpperCase() ?? '';
-    if (text.isEmpty) return null; // optional field
-    final pattern = RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$');
+    if (text.isEmpty || _currency != 'INR') return null; // optional field
+    final pattern = RegExp(
+      r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
+    );
     if (!pattern.hasMatch(text)) {
-      return 'GSTIN should look like 27ABCDE1234F1Z5';
+      return 'Tax ID / GSTIN should look like 27ABCDE1234F1Z5';
     }
     return null;
   }
@@ -123,11 +129,13 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final repo = ref.read(businessRepositoryProvider);
     final phoneText = _phoneCtrl.text.trim();
-    final fullPhone = phoneText.isEmpty ? '' : '${_country.dialCode} $phoneText';
+    final fullPhone = phoneText.isEmpty
+        ? ''
+        : '${_country.dialCode} $phoneText';
     try {
       if (_isEditing) {
         await repo.updateProfile(
@@ -136,9 +144,12 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           ownerName: _ownerNameCtrl.text.trim(),
           phone: fullPhone,
           address: _addressCtrl.text.trim(),
-          gstNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim().toUpperCase(),
+          gstNumber: _gstCtrl.text.trim().isEmpty
+              ? null
+              : _gstCtrl.text.trim().toUpperCase(),
           category: _category,
         );
+        AppFormatters.currencyCode = _currency;
         if (!mounted) return;
         showSuccessSnack(context, 'Business profile updated');
         Navigator.of(context).pop();
@@ -148,15 +159,23 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           ownerName: _ownerNameCtrl.text.trim(),
           phone: fullPhone,
           address: _addressCtrl.text.trim(),
-          gstNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim().toUpperCase(),
+          gstNumber: _gstCtrl.text.trim().isEmpty
+              ? null
+              : _gstCtrl.text.trim().toUpperCase(),
           category: _category,
+          currencyCode: _currency,
         );
+        AppFormatters.currencyCode = _currency;
         ref.read(appLockedProvider.notifier).state = false;
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainShell()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()));
       }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -170,30 +189,58 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
         children: [
           if (!_isEditing) ...[
-            Icon(Icons.storefront_rounded, size: 44, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.storefront_rounded,
+              size: 44,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 16),
-            Text('Set up your shop', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'Set up your shop',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 6),
             Text(
               'No account, no OTP, no internet needed. Everything is saved on this phone.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 28),
           ],
+          DropdownButtonFormField<String>(
+            initialValue: _currency,
+            decoration: const InputDecoration(labelText: 'Business currency'),
+            items: AppFormatters.currencies.entries
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e.key,
+                    child: Text('${e.key} · ${e.value}'),
+                  ),
+                )
+                .toList(),
+            onChanged: _isEditing
+                ? null
+                : (value) => setState(() => _currency = value!),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'One currency per business. Existing amounts are never converted or relabelled.',
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: _businessNameCtrl,
             decoration: const InputDecoration(labelText: 'Business name *'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _ownerNameCtrl,
             decoration: const InputDecoration(labelText: 'Owner name *'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 14),
@@ -207,8 +254,10 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                   onTap: _pickCountry,
                   child: InputDecorator(
                     decoration: const InputDecoration(labelText: 'Code'),
-                    child: Text('${_country.iso}  ${_country.dialCode}',
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      '${_country.iso}  ${_country.dialCode}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ),
@@ -232,7 +281,9 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           const SizedBox(height: 14),
           TextFormField(
             controller: _gstCtrl,
-            decoration: const InputDecoration(labelText: 'GSTIN (optional)'),
+            decoration: const InputDecoration(
+              labelText: 'Tax ID / GSTIN (optional)',
+            ),
             textCapitalization: TextCapitalization.characters,
             validator: _validateGst,
           ),
@@ -240,7 +291,9 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           DropdownButtonFormField<String>(
             initialValue: _category,
             decoration: const InputDecoration(labelText: 'Business type'),
-            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: _categories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
           const SizedBox(height: 28),
@@ -250,7 +303,10 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : Text(_isEditing ? 'Save Changes' : 'Start using ShopHisab'),
           ),
@@ -260,11 +316,13 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
               onPressed: _saving
                   ? null
                   : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const BackupRestoreScreen(autoOpenCloudRestore: true),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BackupRestoreScreen(
+                          autoOpenCloudRestore: true,
                         ),
                       ),
+                    ),
               icon: const Icon(Icons.restore_rounded),
               label: const Text('Already have a backup? Restore old data'),
             ),
@@ -306,11 +364,13 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
     final filtered = _query.isEmpty
         ? countryCodes
         : countryCodes
-            .where((c) =>
-                c.name.toLowerCase().contains(_query) ||
-                c.dialCode.contains(_query) ||
-                c.iso.toLowerCase().contains(_query))
-            .toList();
+              .where(
+                (c) =>
+                    c.name.toLowerCase().contains(_query) ||
+                    c.dialCode.contains(_query) ||
+                    c.iso.toLowerCase().contains(_query),
+              )
+              .toList();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -325,7 +385,8 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
               child: TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
                 decoration: const InputDecoration(
                   hintText: 'Search country or code',
                   prefixIcon: Icon(Icons.search),
@@ -341,8 +402,10 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                   final selected = c.iso == widget.current.iso;
                   return ListTile(
                     title: Text(c.name),
-                    trailing: Text(c.dialCode,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    trailing: Text(
+                      c.dialCode,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     selected: selected,
                     onTap: () => Navigator.pop(context, c),
                   );

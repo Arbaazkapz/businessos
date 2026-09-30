@@ -10,10 +10,17 @@ import '../customers/add_edit_customer_screen.dart';
 import 'invoice_preview_screen.dart';
 
 class _LineDraft {
-  _LineDraft({this.productId, String description = '', double qty = 1, double unitPrice = 0})
-      : descriptionCtrl = TextEditingController(text: description),
-        qtyCtrl = TextEditingController(text: qty == qty.roundToDouble() ? qty.toInt().toString() : qty.toString()),
-        priceCtrl = TextEditingController(text: unitPrice.toString());
+  _LineDraft({
+    String description = '',
+    double qty = 1,
+    double unitPrice = 0,
+  }) : descriptionCtrl = TextEditingController(text: description),
+       qtyCtrl = TextEditingController(
+         text: qty == qty.roundToDouble()
+             ? qty.toInt().toString()
+             : qty.toString(),
+       ),
+       priceCtrl = TextEditingController(text: unitPrice.toString());
 
   String? productId;
   final TextEditingController descriptionCtrl;
@@ -35,7 +42,8 @@ class CreateInvoiceScreen extends ConsumerStatefulWidget {
   const CreateInvoiceScreen({super.key});
 
   @override
-  ConsumerState<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
+  ConsumerState<CreateInvoiceScreen> createState() =>
+      _CreateInvoiceScreenState();
 }
 
 class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
@@ -66,7 +74,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   double get _subtotal => _lines.fold(0.0, (a, l) => a + l.lineTotal);
   double get _discount => double.tryParse(_discountCtrl.text.trim()) ?? 0;
   double get _taxPercent => double.tryParse(_taxCtrl.text.trim()) ?? 0;
-  double get _afterDiscount => (_subtotal - _discount) < 0 ? 0 : _subtotal - _discount;
+  double get _afterDiscount =>
+      (_subtotal - _discount) < 0 ? 0 : _subtotal - _discount;
   double get _taxAmount => _afterDiscount * (_taxPercent / 100);
   double get _total => _afterDiscount + _taxAmount;
 
@@ -80,10 +89,14 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Future<void> _pickProduct(int lineIndex) async {
-    final products = ref.read(productsProvider).valueOrNull ?? const <Product>[];
+    final products =
+        ref.read(productsProvider).valueOrNull ?? const <Product>[];
     if (products.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('No products yet - add some in the Products tab')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No products yet - add some in the Products tab'),
+        ),
+      );
       return;
     }
     final selected = await showModalBottomSheet<Product>(
@@ -102,19 +115,22 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Future<void> _pickCustomer() async {
-    final customers = ref.read(customersProvider).valueOrNull ?? const <Customer>[];
+    final customers =
+        ref.read(customersProvider).valueOrNull ?? const <Customer>[];
     final result = await showModalBottomSheet<Object?>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (ctx) => _CustomerPickerSheet(customers: customers),
     );
+    if (!mounted) return;
 
     if (result == _addNewCustomerMarker) {
       final created = await Navigator.push<Customer>(
         context,
         MaterialPageRoute(builder: (_) => const AddEditCustomerScreen()),
       );
+      if (!mounted) return;
       if (created != null) {
         setState(() {
           _customerId = created.id;
@@ -142,34 +158,66 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Future<void> _save() async {
-    final validLines = _lines.where((l) => l.qty > 0 && l.unitPrice > 0).toList();
+    if (_saving) return;
+    final validLines = _lines;
+    if (_lines.any(
+      (l) =>
+          !l.qty.isFinite ||
+          l.qty <= 0 ||
+          !l.unitPrice.isFinite ||
+          l.unitPrice < 0 ||
+          l.descriptionCtrl.text.trim().isEmpty,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Complete every item: description, positive quantity, and valid price.',
+          ),
+        ),
+      );
+      return;
+    }
     if (validLines.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Add at least one item with a quantity and a unit price')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Add at least one item with a quantity and a unit price',
+          ),
+        ),
+      );
       return;
     }
     if (_status != InvoiceStatus.paid && _customerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unpaid/partial invoices need a customer, not "Walk-in"')));
+        const SnackBar(
+          content: Text(
+            'Unpaid/partial invoices need a customer, not "Walk-in"',
+          ),
+        ),
+      );
       return;
     }
 
     setState(() => _saving = true);
     try {
-      final id = await ref.read(invoiceRepositoryProvider).createInvoice(
+      final id = await ref
+          .read(invoiceRepositoryProvider)
+          .createInvoice(
             customerId: _customerId,
             customerNameSnapshot: _customerName,
             lines: validLines
                 .asMap()
                 .entries
-                .map((entry) => InvoiceLineInput(
-                      description: entry.value.descriptionCtrl.text.trim().isEmpty
-                          ? 'Item ${entry.key + 1}'
-                          : entry.value.descriptionCtrl.text.trim(),
-                      qty: entry.value.qty,
-                      unitPrice: entry.value.unitPrice,
-                      productId: entry.value.productId,
-                    ))
+                .map(
+                  (entry) => InvoiceLineInput(
+                    description: entry.value.descriptionCtrl.text.trim().isEmpty
+                        ? 'Item ${entry.key + 1}'
+                        : entry.value.descriptionCtrl.text.trim(),
+                    qty: entry.value.qty,
+                    unitPrice: entry.value.unitPrice,
+                    productId: entry.value.productId,
+                  ),
+                )
                 .toList(),
             discount: _discount,
             taxPercent: _taxPercent,
@@ -181,7 +229,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       if (!mounted) return;
       showSuccessSnack(context, 'Invoice created');
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: id)));
+        context,
+        MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: id)),
+      );
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -220,7 +274,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                         Expanded(
                           child: TextField(
                             controller: line.descriptionCtrl,
-                            decoration: const InputDecoration(labelText: 'Item description'),
+                            decoration: const InputDecoration(
+                              labelText: 'Item description',
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -245,7 +301,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                           child: TextField(
                             controller: line.qtyCtrl,
                             decoration: const InputDecoration(labelText: 'Qty'),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -254,9 +312,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                           flex: 4,
                           child: TextField(
                             controller: line.priceCtrl,
-                            decoration:
-                                const InputDecoration(labelText: 'Unit price', prefixText: '₹ '),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Unit price',
+                              prefixText: '${AppFormatters.currencyCode} ',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -269,7 +331,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                             child: Text(
                               AppFormatters.money(line.lineTotal),
                               textAlign: TextAlign.right,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -291,8 +355,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               Expanded(
                 child: TextField(
                   controller: _discountCtrl,
-                  decoration: const InputDecoration(labelText: 'Discount', prefixText: '₹ '),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Discount',
+                    prefixText: '${AppFormatters.currencyCode} ',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -300,8 +369,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               Expanded(
                 child: TextField(
                   controller: _taxCtrl,
-                  decoration: const InputDecoration(labelText: 'Tax / GST %', suffixText: '%'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Tax / GST %',
+                    suffixText: '%',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -310,19 +384,24 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
           const SizedBox(height: 4),
           Text(
             'Set the tax rate that applies to your business - check with your accountant for the correct GST rate and CGST/SGST split.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 20),
-          Text('Payment status', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Payment status',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           SegmentedButton<InvoiceStatus>(
             segments: const [
               ButtonSegment(value: InvoiceStatus.paid, label: Text('Paid')),
               ButtonSegment(value: InvoiceStatus.unpaid, label: Text('Unpaid')),
-              ButtonSegment(value: InvoiceStatus.partial, label: Text('Partial')),
+              ButtonSegment(
+                value: InvoiceStatus.partial,
+                label: Text('Partial'),
+              ),
             ],
             selected: {_status},
             onSelectionChanged: (s) => setState(() => _status = s.first),
@@ -331,8 +410,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             const SizedBox(height: 14),
             TextField(
               controller: _amountPaidCtrl,
-              decoration: const InputDecoration(labelText: 'Amount received now', prefixText: '₹ '),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Amount received now',
+                prefixText: '${AppFormatters.currencyCode} ',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ],
           if (_status != InvoiceStatus.paid) ...[
@@ -340,8 +424,15 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event_outlined),
-              title: Text(_dueDate == null ? 'No due date set' : AppFormatters.date(_dueDate!)),
-              trailing: TextButton(onPressed: _pickDueDate, child: const Text('Set due date')),
+              title: Text(
+                _dueDate == null
+                    ? 'No due date set'
+                    : AppFormatters.date(_dueDate!),
+              ),
+              trailing: TextButton(
+                onPressed: _pickDueDate,
+                child: const Text('Set due date'),
+              ),
             ),
           ],
           const SizedBox(height: 14),
@@ -371,7 +462,13 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(
-                    width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Text('Create Invoice'),
           ),
         ],
@@ -441,8 +538,12 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
     final filtered = _query.isEmpty
         ? widget.customers
         : widget.customers
-            .where((c) => c.name.toLowerCase().contains(_query) || c.phone.contains(_query))
-            .toList();
+              .where(
+                (c) =>
+                    c.name.toLowerCase().contains(_query) ||
+                    c.phone.contains(_query),
+              )
+              .toList();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -456,7 +557,8 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: TextField(
                 controller: _searchCtrl,
-                onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
                 decoration: const InputDecoration(
                   hintText: 'Search customers',
                   prefixIcon: Icon(Icons.search),
@@ -473,9 +575,17 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                     onTap: () => Navigator.pop(context, null),
                   ),
                   ListTile(
-                    leading: Icon(Icons.person_add_alt_1_rounded, color: scheme.primary),
-                    title: Text('Add new customer',
-                        style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
+                    leading: Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: scheme.primary,
+                    ),
+                    title: Text(
+                      'Add new customer',
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     onTap: () => Navigator.pop(context, _addNewCustomerMarker),
                   ),
                   const Divider(),
@@ -483,16 +593,20 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        widget.customers.isEmpty ? 'No customers yet' : 'No matching customers',
+                        widget.customers.isEmpty
+                            ? 'No customers yet'
+                            : 'No matching customers',
                         style: TextStyle(color: scheme.onSurfaceVariant),
                       ),
                     )
                   else
-                    ...filtered.map((c) => ListTile(
-                          title: Text(c.name),
-                          subtitle: Text(c.phone),
-                          onTap: () => Navigator.pop(context, c),
-                        )),
+                    ...filtered.map(
+                      (c) => ListTile(
+                        title: Text(c.name),
+                        subtitle: Text(c.phone),
+                        onTap: () => Navigator.pop(context, c),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -528,11 +642,13 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     final filtered = _query.isEmpty
         ? widget.products
         : widget.products
-            .where((p) =>
-                p.name.toLowerCase().contains(_query) ||
-                p.category.toLowerCase().contains(_query) ||
-                (p.barcode ?? '').contains(_query))
-            .toList();
+              .where(
+                (p) =>
+                    p.name.toLowerCase().contains(_query) ||
+                    p.category.toLowerCase().contains(_query) ||
+                    (p.barcode ?? '').contains(_query),
+              )
+              .toList();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -547,7 +663,8 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
               child: TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
                 decoration: const InputDecoration(
                   hintText: 'Search products by name, category or barcode',
                   prefixIcon: Icon(Icons.search),
@@ -557,8 +674,12 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
             Expanded(
               child: filtered.isEmpty
                   ? Center(
-                      child: Text('No matching products',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      child: Text(
+                        'No matching products',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     )
                   : ListView.builder(
                       controller: scrollController,
@@ -568,7 +689,8 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                         return ListTile(
                           title: Text(p.name),
                           subtitle: Text(
-                              '${AppFormatters.money(p.sellingPrice)} · ${p.stockQty.toStringAsFixed(0)} ${p.unit} left'),
+                            '${AppFormatters.money(p.sellingPrice)} · ${p.stockQty.toStringAsFixed(0)} ${p.unit} left',
+                          ),
                           onTap: () => Navigator.pop(context, p),
                         );
                       },
