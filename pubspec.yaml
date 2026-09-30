@@ -1,7 +1,7 @@
 name: businessos
-description: "ShopHisab - offline-first business management app for Indian shopkeepers. Your Shop. Your Data. Always Available."
+description: "ShopHisab - offline-first business management app for shopkeepers. Your Shop. Your Data. Always Available."
 publish_to: 'none'
-version: 1.5.0+1
+version: 1.6.0+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -20,7 +20,7 @@ dependencies:
   path_provider: ^2.1.4
   path: ^1.9.0
 
-  # Formatting (currency / date, India locale)
+  # Formatting (currency / date, business currency)
   intl: ^0.19.0
 
   # Invoice PDF generation, preview, print & share
@@ -40,6 +40,7 @@ dependencies:
   # AES encryption for local backup files
   encrypt: ^5.0.3
   crypto: ^3.0.3
+  cryptography: ^2.7.0
 
   # Unique IDs for offline-generated records (no server needed)
   uuid: ^4.4.2
@@ -50,7 +51,7 @@ dependencies:
   # Dashboard charts
   fl_chart: ^0.68.0
 
-  # Optional cloud backup: Google Sign-In (restricted to the drive.file
+  # Optional cloud backup: Google Sign-In (restricted to the drive.appdata
   # scope only - the app can never see files it didn't create) + raw HTTP
   # calls to the Drive v3 REST API. Deliberately not using the heavier
   # `googleapis` package to keep this dependency surface minimal.
@@ -61,6 +62,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  path_provider_platform_interface: ^2.1.2
   build_runner: ^2.15.1
   drift_dev: ^2.34.5
   flutter_launcher_icons: "^0.14.4"
