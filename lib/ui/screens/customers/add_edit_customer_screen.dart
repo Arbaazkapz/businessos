@@ -1,3 +1,4 @@
+import '../../../core/validation.dart';
 import '../../../core/formatters.dart';
 
 import 'package:flutter/material.dart';
@@ -117,30 +118,52 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Full name *'),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  AppValidation.personName(v, label: 'Customer name'),
+              inputFormatters: [personNameFormatter],
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Phone number'),
+              validator: (v) => AppValidation.phone(v),
+              inputFormatters: [PhoneInputFormatter()],
+              decoration: const InputDecoration(
+                labelText: 'Phone number',
+                helperText: 'India: 10 digits. International: +country code.',
+              ),
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _addressCtrl,
               decoration: const InputDecoration(labelText: 'Address'),
+              validator: (v) =>
+                  AppValidation.optionalText(v, label: 'Address', max: 250),
               maxLines: 2,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _gstCtrl,
-              decoration: const InputDecoration(labelText: 'GSTIN (optional)'),
+              validator: (v) => AppValidation.taxId(
+                v,
+                india: AppFormatters.currencyCode == 'INR',
+              ),
+              decoration: InputDecoration(
+                labelText: AppFormatters.currencyCode == 'INR'
+                    ? 'GSTIN (optional)'
+                    : 'Tax ID (optional)',
+              ),
               textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _creditLimitCtrl,
+              inputFormatters: [DecimalInputFormatter()],
+              validator: (v) => AppValidation.number(
+                v,
+                label: 'Credit limit',
+                optional: true,
+              ),
               decoration: InputDecoration(
                 labelText: 'Credit limit (optional)',
                 prefixText: '${AppFormatters.currencyCode} ',
@@ -153,6 +176,8 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             TextFormField(
               controller: _notesCtrl,
               decoration: const InputDecoration(labelText: 'Notes'),
+              validator: (v) =>
+                  AppValidation.optionalText(v, label: 'Notes', max: 500),
               maxLines: 3,
             ),
             const SizedBox(height: 24),

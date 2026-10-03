@@ -1,0 +1,98 @@
+00:00 +0: loading /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart
+00:00 +0: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +1: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +2: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +3: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +4: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +5: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +6: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +7: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: cash invoice and partial payment count once; later settlement belongs to its actual day
+00:00 +8: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/history_repository_test.dart: date bounds are exclusive at next midnight; detail pagination is deterministic
+00:00 +9: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/auth_repository_test.dart: PIN hashing and persisted cooldown survive a new repository
+00:04 +9: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: round trip restores records and keeps live database usable
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:businessos/data/app_database.g.dart:4078:36)
+#4      new AppDatabase.forExecutor (package:businessos/data/app_database.dart:155:53)
+#5      BackupRepository.restoreEncrypted.<anonymous closure> (package:businessos/data/repositories.dart:863:34)
+<asynchronous suspension>
+#6      BackupRepository._exclusive (package:businessos/data/repositories.dart:768:14)
+<asynchronous suspension>
+#7      main.<anonymous closure> (file:///workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart:50:5)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:04 +10: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/auth_repository_test.dart: PIN hashing and persisted cooldown survive a new repository
+00:04 +11: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/auth_repository_test.dart: PIN hashing and persisted cooldown survive a new repository
+00:05 +12: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/auth_repository_test.dart: PIN hashing and persisted cooldown survive a new repository
+00:05 +13: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/auth_repository_test.dart: PIN hashing and persisted cooldown survive a new repository
+00:05 +14: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: authenticated backup round trip and randomized encryption
+00:06 +15: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: authenticated backup round trip and randomized encryption
+00:06 +16: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: authenticated backup round trip and randomized encryption
+00:06 +17: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: authenticated backup round trip and randomized encryption
+00:06 +18: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: wrong password or corrupt file leaves existing data intact
+00:07 +19: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: wrong password or corrupt file leaves existing data intact
+00:07 +20: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: wrong password or corrupt file leaves existing data intact
+00:07 +21: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: wrong password or corrupt file leaves existing data intact
+00:07 +22: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: wrong password or corrupt file leaves existing data intact
+00:07 +23: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:07 +23: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: version 1 backup migrates paid invoices and default currency
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:businessos/data/app_database.g.dart:4078:36)
+#4      new AppDatabase.forExecutor (package:businessos/data/app_database.dart:155:53)
+#5      main.<anonymous closure> (file:///workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart:80:34)
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:08 +24: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +25: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +26: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +27: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +28: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +29: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:08 +30: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:09 +31: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:10 +31: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart: version 1 backup migrates paid invoices and default currency
+WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _$AppDatabase (package:businessos/data/app_database.g.dart:4078:36)
+#4      new AppDatabase.forExecutor (package:businessos/data/app_database.dart:155:53)
+#5      BackupRepository.restoreEncrypted.<anonymous closure> (package:businessos/data/repositories.dart:863:34)
+<asynchronous suspension>
+#6      BackupRepository._exclusive (package:businessos/data/repositories.dart:768:14)
+<asynchronous suspension>
+#7      main.<anonymous closure> (file:///workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_restore_test.dart:103:7)
+<asynchronous suspension>
+#8      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#9      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#10     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:10 +32: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: wrong passphrase, tampered header, nonce and ciphertext rejected
+00:14 +33: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: new backups reject empty or short passwords
+00:14 +34: /workspace/scratch/cd7425f1fb11/work/ShopHisab/test/backup_codec_test.dart: legacy CBC backup remains readable
+00:14 +35: All tests passed!

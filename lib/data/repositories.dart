@@ -1,3 +1,5 @@
+import '../core/validation.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -58,6 +60,9 @@ class BusinessRepository {
       throw StateError('A business is already set up.');
     if (businessName.trim().isEmpty || ownerName.trim().isEmpty)
       throw ArgumentError('Business and owner names are required.');
+    AppValidation.requireValid(AppValidation.phone(phone));
+    AppValidation.requireValid(AppValidation.name(businessName));
+    AppValidation.requireValid(AppValidation.name(ownerName));
     if (!AppFormatters.currencies.containsKey(currencyCode))
       throw ArgumentError('Unsupported currency.');
     await _db
@@ -85,6 +90,11 @@ class BusinessRepository {
     String? category,
     String? invoicePrefix,
   }) {
+    if (phone != null) AppValidation.requireValid(AppValidation.phone(phone));
+    if (businessName != null)
+      AppValidation.requireValid(AppValidation.name(businessName));
+    if (ownerName != null)
+      AppValidation.requireValid(AppValidation.name(ownerName));
     return (_db.update(
       _db.businessProfiles,
     )..where((t) => t.id.equals(profile.id))).write(
@@ -150,7 +160,8 @@ class CustomerRepository {
     double? creditLimit,
     String notes = '',
   }) async {
-    if (name.trim().isEmpty) throw ArgumentError('Customer name is required.');
+    AppValidation.requireValid(AppValidation.name(name));
+    AppValidation.requireValid(AppValidation.phone(phone));
     if (creditLimit != null) _nonNegative(creditLimit, 'Credit limit');
     final id = _uuid.v4();
     await _db
@@ -181,6 +192,8 @@ class CustomerRepository {
     bool? isFavourite,
     bool? isBlocked,
   }) {
+    if (phone != null) AppValidation.requireValid(AppValidation.phone(phone));
+    if (name != null) AppValidation.requireValid(AppValidation.name(name));
     if (creditLimit != null) _nonNegative(creditLimit, 'Credit limit');
     if (name != null && name.trim().isEmpty)
       throw ArgumentError('Customer name is required.');

@@ -20,10 +20,12 @@ errors without first making and independently checking an encrypted backup.
 ## Local build (Flutter 3.47.5; JDK 17; Android SDKs 34–36)
 
 Use a full JDK (including `javac`), not a Java runtime alone. The app targets
-SDK 36; existing plugins additionally compile against SDKs 34 and 35.
+SDK 36. The root Gradle configuration aligns Android library compilation to at
+least SDK 36, including older plugins that declare SDK 34 or 35, so their newer
+transitive dependencies pass Android metadata checks. Minimum SDK remains 24.
 
 ```bash
-sdkmanager "platforms;android-34" "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+sdkmanager "platforms;android-34" "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.22.1"
 flutter pub get
 # Only needed if android/ is absent:
 flutter create --platforms=android --org com.businessos --project-name businessos .

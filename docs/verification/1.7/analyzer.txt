@@ -1,0 +1,72 @@
+Analyzing ShopHisab...                                          
+
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/core/validation.dart:22:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/core/validation.dart:25:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/core/validation.dart:28:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/core/validation.dart:36:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/core/validation.dart:40:7 • curly_braces_in_flow_control_structures
+   info • Parameter 'executor' could be a super parameter. Trying converting 'executor' to a super parameter • lib/data/app_database.dart:155:3 • use_super_parameters
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/app_database.dart:178:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:60:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:62:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:67:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:95:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:97:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:199:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:276:11 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:341:11 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:359:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:380:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:529:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:596:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:602:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:607:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:612:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:625:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:629:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:639:13 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:765:7 • curly_braces_in_flow_control_structures
+   info • 'dispose' is deprecated and shouldn't be used. Call close() instead. Try replacing the use of the deprecated member with the replacement • lib/data/repositories.dart:861:15 • deprecated_member_use
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:1012:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/data/repositories.dart:1053:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:157:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:161:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:200:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:231:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:246:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:266:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/services/google_drive_service.dart:286:9 • curly_braces_in_flow_control_structures
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/services/pdf_invoice_service.dart:53:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/services/pdf_invoice_service.dart:71:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/services/pdf_invoice_service.dart:85:24 • prefer_const_constructors
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/business_setup_screen.dart:173:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/customers/add_edit_customer_screen.dart:99:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/customers/customer_detail_screen.dart:86:23 • curly_braces_in_flow_control_structures
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/ui/screens/customers/customer_detail_screen.dart:180:11 • prefer_const_constructors
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/customers/customer_detail_screen.dart:250:13 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/dashboard_screen.dart:174:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:46:17 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:101:17 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:107:17 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:110:17 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:177:15 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/history_screen.dart:181:15 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/invoices/create_invoice_screen.dart:240:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/ledger/add_ledger_entry_screen.dart:84:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/pin_screens.dart:39:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/pin_screens.dart:70:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/pin_screens.dart:200:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/products/product_screens.dart:99:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/products/product_screens.dart:317:9 • curly_braces_in_flow_control_structures
+   info • Unnecessary 'const' keyword. Try removing the keyword • lib/ui/screens/settings/settings_screens.dart:290:23 • unnecessary_const
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/settings/settings_screens.dart:491:11 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/settings/settings_screens.dart:596:9 • curly_braces_in_flow_control_structures
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/ui/screens/settings/settings_screens.dart:797:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/ui/screens/settings/settings_screens.dart:809:15 • prefer_const_constructors
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/ui/screens/splash_screen.dart:30:9 • curly_braces_in_flow_control_structures
+   info • 'dispose' is deprecated and shouldn't be used. Call close() instead. Try replacing the use of the deprecated member with the replacement • test/backup_restore_test.dart:94:13 • deprecated_member_use
+   info • The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_test/flutter_test.dart'. Try removing the import directive • test/validation_test.dart:1:8 • unnecessary_import
+   info • Can't use a relative path to import a library in 'lib'. Try fixing the relative path or changing the import to a 'package:' import • tool/calculator_smoke.dart:1:8 • avoid_relative_lib_imports
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • tool/calculator_smoke.dart:7:7 • curly_braces_in_flow_control_structures
+
+68 issues found. (ran in 20.4s)

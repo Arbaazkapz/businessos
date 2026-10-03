@@ -24,8 +24,9 @@ void main() {
     expect(find.text('Tax calculator'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('tax cents stay consistent and invalid amounts show an error',
-      (tester) async {
+  testWidgets('tax cents stay consistent and invalid amounts show an error', (
+    tester,
+  ) async {
     final currency = AppFormatters.currencyCode;
     AppFormatters.currencyCode = 'INR';
     addTearDown(() => AppFormatters.currencyCode = currency);
@@ -41,6 +42,19 @@ void main() {
     await tester.pump();
     expect(find.text('Enter an amount from 0 to 1 trillion.'), findsOneWidget);
     expect(find.text('₹0.06'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('calculator works in a short floating window', (tester) async {
+    tester.view.physicalSize = const Size(320, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
+    expect(tester.takeException(), isNull);
+    final equals = find.text('=');
+    await tester.ensureVisible(equals);
+    await tester.pumpAndSettle();
+    await tester.tap(equals);
     expect(tester.takeException(), isNull);
   });
 }

@@ -1,0 +1,16 @@
+{
+  "package": "com.businessos.businessos",
+  "version": "1.7.0+3",
+  "file": "ShopHisab.apk",
+  "bytes": 71912075,
+  "sha256": "fc2c69e4a3052aff268d2d03512b3aa2e3905d07b286c154796515d98a79a599",
+  "min_sdk": 24,
+  "target_sdk": 36,
+  "signature_verified": true,
+  "signing": "bundled test key",
+  "zip_alignment_16kb_verified": true,
+  "native_64bit_alignment_16kb_verified": true,
+  "automated_tests_passed": 35,
+  "physical_device_tested": false,
+  "live_google_drive_tested": false
+}

@@ -1,3 +1,5 @@
+import '../../../core/validation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,17 +12,14 @@ import '../customers/add_edit_customer_screen.dart';
 import 'invoice_preview_screen.dart';
 
 class _LineDraft {
-  _LineDraft({
-    String description = '',
-    double qty = 1,
-    double unitPrice = 0,
-  }) : descriptionCtrl = TextEditingController(text: description),
-       qtyCtrl = TextEditingController(
-         text: qty == qty.roundToDouble()
-             ? qty.toInt().toString()
-             : qty.toString(),
-       ),
-       priceCtrl = TextEditingController(text: unitPrice.toString());
+  _LineDraft({String description = '', double qty = 1, double unitPrice = 0})
+    : descriptionCtrl = TextEditingController(text: description),
+      qtyCtrl = TextEditingController(
+        text: qty == qty.roundToDouble()
+            ? qty.toInt().toString()
+            : qty.toString(),
+      ),
+      priceCtrl = TextEditingController(text: unitPrice.toString());
 
   String? productId;
   final TextEditingController descriptionCtrl;
@@ -58,6 +57,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   InvoiceStatus _status = InvoiceStatus.paid;
   DateTime? _dueDate;
   bool _saving = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -105,7 +105,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       isScrollControlled: true,
       builder: (ctx) => _ProductPickerSheet(products: products),
     );
-    if (selected != null) {
+    if (selected != null && mounted) {
       setState(() {
         _lines[lineIndex].productId = selected.id;
         _lines[lineIndex].descriptionCtrl.text = selected.name;
@@ -154,11 +154,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null) setState(() => _dueDate = picked);
+    if (picked != null && mounted) setState(() => _dueDate = picked);
   }
 
   Future<void> _save() async {
     if (_saving) return;
+    if (!_formKey.currentState!.validate()) return;
     final validLines = _lines;
     if (_lines.any(
       (l) =>
@@ -222,7 +223,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             discount: _discount,
             taxPercent: _taxPercent,
             status: _status,
-            amountPaidNow: double.tryParse(_amountPaidCtrl.text.trim()) ?? 0,
+            amountPaidNow: _status == InvoiceStatus.partial
+                ? double.tryParse(_amountPaidCtrl.text.trim()) ?? 0
+                : 0,
             notes: _notesCtrl.text.trim(),
             dueDate: _dueDate,
           );
@@ -245,233 +248,287 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('New Invoice')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-        children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: Text(_customerName),
-              subtitle: const Text('Tap to change customer'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickCustomer,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+          children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: Text(_customerName),
+                subtitle: const Text('Tap to change customer'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _pickCustomer,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text('Items', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          ..._lines.asMap().entries.map((entry) {
-            final i = entry.key;
-            final line = entry.value;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: line.descriptionCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Item description',
+            const SizedBox(height: 20),
+            Text('Items', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            ..._lines.asMap().entries.map((entry) {
+              final i = entry.key;
+              final line = entry.value;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: line.descriptionCtrl,
+                              validator: (v) => AppValidation.title(
+                                v,
+                                label: 'Item description',
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Item description',
+                              ),
+                              onChanged: (_) => setState(() {}),
                             ),
-                            onChanged: (_) => setState(() {}),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.inventory_2_outlined),
-                          tooltip: 'Pick from products',
-                          onPressed: () => _pickProduct(i),
-                        ),
-                        if (_lines.length > 1)
                           IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => _removeLine(i),
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            tooltip: 'Pick from products',
+                            onPressed: () => _pickProduct(i),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            controller: line.qtyCtrl,
-                            decoration: const InputDecoration(labelText: 'Qty'),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
+                          if (_lines.length > 1)
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => _removeLine(i),
                             ),
-                            onChanged: (_) => setState(() {}),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: line.qtyCtrl,
+                              inputFormatters: [
+                                DecimalInputFormatter(decimals: 3),
+                              ],
+                              validator: (v) => AppValidation.number(
+                                v,
+                                label: 'Quantity',
+                                positive: true,
+                                decimals: 3,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Qty',
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              onChanged: (_) => setState(() {}),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 4,
-                          child: TextField(
-                            controller: line.priceCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Unit price',
-                              prefixText: '${AppFormatters.currencyCode} ',
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 4,
+                            child: TextFormField(
+                              controller: line.priceCtrl,
+                              inputFormatters: [
+                                DecimalInputFormatter(decimals: 2),
+                              ],
+                              validator: (v) =>
+                                  AppValidation.number(v, label: 'Unit price'),
+                              decoration: InputDecoration(
+                                labelText: 'Unit price',
+                                prefixText: '${AppFormatters.currencyCode} ',
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              onChanged: (_) => setState(() {}),
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            onChanged: (_) => setState(() {}),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 3,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              AppFormatters.money(line.lineTotal),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 3,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                AppFormatters.money(line.lineTotal),
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            OutlinedButton.icon(
+              onPressed: _addLine,
+              icon: const Icon(Icons.add),
+              label: const Text('Add line item'),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _discountCtrl,
+                    inputFormatters: [DecimalInputFormatter(decimals: 2)],
+                    validator: (v) {
+                      final base =
+                          AppValidation.number(v, label: 'Discount');
+                      if (base != null) return base;
+                      if ((double.tryParse(v!.trim()) ?? 0) > _subtotal) {
+                        return 'Discount cannot exceed the subtotal.';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Discount',
+                      prefixText: '${AppFormatters.currencyCode} ',
                     ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _taxCtrl,
+                    inputFormatters: [DecimalInputFormatter(decimals: 2)],
+                    validator: (v) =>
+                        AppValidation.number(v, label: 'Tax', max: 100),
+                    decoration: const InputDecoration(
+                      labelText: 'Tax / GST %',
+                      suffixText: '%',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Set the tax rate that applies to your business - check with your accountant for the correct GST rate and CGST/SGST split.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Payment status',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<InvoiceStatus>(
+              segments: const [
+                ButtonSegment(value: InvoiceStatus.paid, label: Text('Paid')),
+                ButtonSegment(
+                  value: InvoiceStatus.unpaid,
+                  label: Text('Unpaid'),
+                ),
+                ButtonSegment(
+                  value: InvoiceStatus.partial,
+                  label: Text('Partial'),
+                ),
+              ],
+              selected: {_status},
+              onSelectionChanged: (s) => setState(() => _status = s.first),
+            ),
+            if (_status == InvoiceStatus.partial) ...[
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _amountPaidCtrl,
+                inputFormatters: [DecimalInputFormatter(decimals: 2)],
+                validator: (v) {
+                  final base = AppValidation.number(
+                    v,
+                    label: 'Payment',
+                    positive: true,
+                  );
+                  if (base != null) return base;
+                  if ((double.tryParse(v!.trim()) ?? 0) >= _total) {
+                    return 'Partial payment must be less than the total.';
+                  }
+                  return null;
+                },
+                decoration: InputDecoration(
+                  labelText: 'Amount received now',
+                  prefixText: '${AppFormatters.currencyCode} ',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+              ),
+            ],
+            if (_status != InvoiceStatus.paid) ...[
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.event_outlined),
+                title: Text(
+                  _dueDate == null
+                      ? 'No due date set'
+                      : AppFormatters.date(_dueDate!),
+                ),
+                trailing: TextButton(
+                  onPressed: _pickDueDate,
+                  child: const Text('Set due date'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            TextField(
+              controller: _notesCtrl,
+              decoration: const InputDecoration(labelText: 'Notes (optional)'),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 20),
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _SummaryRow('Subtotal', _subtotal),
+                    _SummaryRow('Discount', -_discount),
+                    _SummaryRow('Tax', _taxAmount),
+                    const Divider(),
+                    _SummaryRow('Total', _total, bold: true),
                   ],
                 ),
               ),
-            );
-          }),
-          OutlinedButton.icon(
-            onPressed: _addLine,
-            icon: const Icon(Icons.add),
-            label: const Text('Add line item'),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _discountCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Discount',
-                    prefixText: '${AppFormatters.currencyCode} ',
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _taxCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Tax / GST %',
-                    suffixText: '%',
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Set the tax rate that applies to your business - check with your accountant for the correct GST rate and CGST/SGST split.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Payment status',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          SegmentedButton<InvoiceStatus>(
-            segments: const [
-              ButtonSegment(value: InvoiceStatus.paid, label: Text('Paid')),
-              ButtonSegment(value: InvoiceStatus.unpaid, label: Text('Unpaid')),
-              ButtonSegment(
-                value: InvoiceStatus.partial,
-                label: Text('Partial'),
-              ),
-            ],
-            selected: {_status},
-            onSelectionChanged: (s) => setState(() => _status = s.first),
-          ),
-          if (_status == InvoiceStatus.partial) ...[
-            const SizedBox(height: 14),
-            TextField(
-              controller: _amountPaidCtrl,
-              decoration: InputDecoration(
-                labelText: 'Amount received now',
-                prefixText: '${AppFormatters.currencyCode} ',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Create Invoice'),
             ),
           ],
-          if (_status != InvoiceStatus.paid) ...[
-            const SizedBox(height: 14),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event_outlined),
-              title: Text(
-                _dueDate == null
-                    ? 'No due date set'
-                    : AppFormatters.date(_dueDate!),
-              ),
-              trailing: TextButton(
-                onPressed: _pickDueDate,
-                child: const Text('Set due date'),
-              ),
-            ),
-          ],
-          const SizedBox(height: 14),
-          TextField(
-            controller: _notesCtrl,
-            decoration: const InputDecoration(labelText: 'Notes (optional)'),
-            maxLines: 2,
-          ),
-          const SizedBox(height: 20),
-          Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _SummaryRow('Subtotal', _subtotal),
-                  _SummaryRow('Discount', -_discount),
-                  _SummaryRow('Tax', _taxAmount),
-                  const Divider(),
-                  _SummaryRow('Total', _total, bold: true),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Create Invoice'),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/calculator_engine.dart';
 import '../../core/formatters.dart';
+import '../../core/validation.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -95,172 +98,189 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       ),
       backgroundColor: scheme.surface,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-              child: Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: SizedBox(
+              height: math.max(
+                constraints.maxHeight,
+                520 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
+              ),
+              child: Column(
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'OFFLINE · STEP-BY-STEP',
-                      style: TextStyle(fontSize: 11, letterSpacing: 1.3),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'OFFLINE · STEP-BY-STEP',
+                            style: TextStyle(fontSize: 11, letterSpacing: 1.3),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Copy result',
+                          onPressed: _calculator.hasError
+                              ? null
+                              : () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: _display),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Result copied'),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.copy_outlined, size: 19),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Copy result',
-                    onPressed: _calculator.hasError
-                        ? null
-                        : () {
-                            Clipboard.setData(ClipboardData(text: _display));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Result copied')),
-                            );
-                          },
-                    icon: const Icon(Icons.copy_outlined, size: 19),
+                  // Display area - given a definite flex-bounded height so the
+                  // FittedBoxes inside have something concrete to scale down to.
+                  // (Previously these were unconstrained, so long results rendered
+                  // at full size and spilled over the button grid below.)
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            scheme.primaryContainer.withValues(alpha: 0.65),
+                            scheme.surfaceContainerLow,
+                          ],
+                        ),
+                        border: Border.all(
+                          color: scheme.outlineVariant.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                _expression,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w500,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                _display,
+                                style: const TextStyle(
+                                  fontSize: 64,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Uniform 4x5 button grid - every button is the same size, no
+                  // odd double-width cells, so nothing looks mismatched.
+                  Expanded(
+                    flex: 5,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Column(
+                        children: [
+                          _CalcRow([
+                            _CalcButton(
+                              label: 'C',
+                              kind: _ButtonKind.secondary,
+                              onTap: _onClear,
+                            ),
+                            _CalcButton(
+                              icon: Icons.backspace_outlined,
+                              kind: _ButtonKind.secondary,
+                              onTap: _onBackspace,
+                            ),
+                            _CalcButton(
+                              label: '%',
+                              kind: _ButtonKind.secondary,
+                              onTap: () => _act(_calculator.percent),
+                            ),
+                            _CalcButton(
+                              label: '÷',
+                              kind: _ButtonKind.operator,
+                              onTap: () => _onOperator('÷'),
+                            ),
+                          ]),
+                          _CalcRow([
+                            _CalcButton(label: '7', onTap: () => _onDigit('7')),
+                            _CalcButton(label: '8', onTap: () => _onDigit('8')),
+                            _CalcButton(label: '9', onTap: () => _onDigit('9')),
+                            _CalcButton(
+                              label: '×',
+                              kind: _ButtonKind.operator,
+                              onTap: () => _onOperator('×'),
+                            ),
+                          ]),
+                          _CalcRow([
+                            _CalcButton(label: '4', onTap: () => _onDigit('4')),
+                            _CalcButton(label: '5', onTap: () => _onDigit('5')),
+                            _CalcButton(label: '6', onTap: () => _onDigit('6')),
+                            _CalcButton(
+                              label: '−',
+                              kind: _ButtonKind.operator,
+                              onTap: () => _onOperator('−'),
+                            ),
+                          ]),
+                          _CalcRow([
+                            _CalcButton(label: '1', onTap: () => _onDigit('1')),
+                            _CalcButton(label: '2', onTap: () => _onDigit('2')),
+                            _CalcButton(label: '3', onTap: () => _onDigit('3')),
+                            _CalcButton(
+                              label: '+',
+                              kind: _ButtonKind.operator,
+                              onTap: () => _onOperator('+'),
+                            ),
+                          ]),
+                          _CalcRow([
+                            _CalcButton(
+                              label: '±',
+                              kind: _ButtonKind.secondary,
+                              onTap: _onSign,
+                            ),
+                            _CalcButton(label: '0', onTap: () => _onDigit('0')),
+                            _CalcButton(label: '.', onTap: () => _onDigit('.')),
+                            _CalcButton(
+                              label: '=',
+                              kind: _ButtonKind.equals,
+                              onTap: _onEquals,
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            // Display area - given a definite flex-bounded height so the
-            // FittedBoxes inside have something concrete to scale down to.
-            // (Previously these were unconstrained, so long results rendered
-            // at full size and spilled over the button grid below.)
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      scheme.primaryContainer.withValues(alpha: 0.65),
-                      scheme.surfaceContainerLow,
-                    ],
-                  ),
-                  border: Border.all(
-                    color: scheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.bottomRight,
-                        child: Text(
-                          _expression,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.bottomRight,
-                        child: Text(
-                          _display,
-                          style: const TextStyle(
-                            fontSize: 64,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Uniform 4x5 button grid - every button is the same size, no
-            // odd double-width cells, so nothing looks mismatched.
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Column(
-                  children: [
-                    _CalcRow([
-                      _CalcButton(
-                        label: 'C',
-                        kind: _ButtonKind.secondary,
-                        onTap: _onClear,
-                      ),
-                      _CalcButton(
-                        icon: Icons.backspace_outlined,
-                        kind: _ButtonKind.secondary,
-                        onTap: _onBackspace,
-                      ),
-                      _CalcButton(
-                        label: '%',
-                        kind: _ButtonKind.secondary,
-                        onTap: () => _act(_calculator.percent),
-                      ),
-                      _CalcButton(
-                        label: '÷',
-                        kind: _ButtonKind.operator,
-                        onTap: () => _onOperator('÷'),
-                      ),
-                    ]),
-                    _CalcRow([
-                      _CalcButton(label: '7', onTap: () => _onDigit('7')),
-                      _CalcButton(label: '8', onTap: () => _onDigit('8')),
-                      _CalcButton(label: '9', onTap: () => _onDigit('9')),
-                      _CalcButton(
-                        label: '×',
-                        kind: _ButtonKind.operator,
-                        onTap: () => _onOperator('×'),
-                      ),
-                    ]),
-                    _CalcRow([
-                      _CalcButton(label: '4', onTap: () => _onDigit('4')),
-                      _CalcButton(label: '5', onTap: () => _onDigit('5')),
-                      _CalcButton(label: '6', onTap: () => _onDigit('6')),
-                      _CalcButton(
-                        label: '−',
-                        kind: _ButtonKind.operator,
-                        onTap: () => _onOperator('−'),
-                      ),
-                    ]),
-                    _CalcRow([
-                      _CalcButton(label: '1', onTap: () => _onDigit('1')),
-                      _CalcButton(label: '2', onTap: () => _onDigit('2')),
-                      _CalcButton(label: '3', onTap: () => _onDigit('3')),
-                      _CalcButton(
-                        label: '+',
-                        kind: _ButtonKind.operator,
-                        onTap: () => _onOperator('+'),
-                      ),
-                    ]),
-                    _CalcRow([
-                      _CalcButton(
-                        label: '±',
-                        kind: _ButtonKind.secondary,
-                        onTap: _onSign,
-                      ),
-                      _CalcButton(label: '0', onTap: () => _onDigit('0')),
-                      _CalcButton(label: '.', onTap: () => _onDigit('.')),
-                      _CalcButton(
-                        label: '=',
-                        kind: _ButtonKind.equals,
-                        onTap: _onEquals,
-                      ),
-                    ]),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -426,6 +446,7 @@ class _GstCalculatorSheetState extends State<_GstCalculatorSheet> {
             controller: _amountCtrl,
             autofocus: widget.initialAmount == null,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [DecimalInputFormatter()],
             decoration: InputDecoration(
               labelText: 'Amount (${AppFormatters.currencyCode})',
               errorText: _amountCtrl.text.isNotEmpty && !amountValid

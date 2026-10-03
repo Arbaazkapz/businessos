@@ -1,3 +1,5 @@
+import '../../core/validation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -97,13 +99,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
   }
 
   String? _validatePhone(String? v) {
-    final text = v?.trim() ?? '';
-    if (text.isEmpty) return null; // optional field
-    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digitsOnly.length < 7 || digitsOnly.length > 12) {
-      return 'Enter a valid phone number';
-    }
-    return null;
+    return AppValidation.phone(v, dialCode: _country.dialCode);
   }
 
   String? _validateGst(String? v) {
@@ -232,15 +228,16 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
             controller: _businessNameCtrl,
             decoration: const InputDecoration(labelText: 'Business name *'),
             validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Required' : null,
+                AppValidation.title(v, label: 'Business name'),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _ownerNameCtrl,
             decoration: const InputDecoration(labelText: 'Owner name *'),
+            inputFormatters: [personNameFormatter],
             validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Required' : null,
+                AppValidation.personName(v, label: 'Owner name'),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 14),
@@ -267,6 +264,7 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
                   controller: _phoneCtrl,
                   decoration: const InputDecoration(labelText: 'Phone number'),
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [PhoneInputFormatter()],
                   validator: _validatePhone,
                 ),
               ),
@@ -276,6 +274,8 @@ class _BusinessSetupScreenState extends ConsumerState<BusinessSetupScreen> {
           TextFormField(
             controller: _addressCtrl,
             decoration: const InputDecoration(labelText: 'Shop address'),
+            validator: (v) =>
+                AppValidation.optionalText(v, label: 'Address', max: 250),
             maxLines: 2,
           ),
           const SizedBox(height: 14),

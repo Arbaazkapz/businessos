@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=BusinessOS Debug, O=BusinessOS, C=IN
+Signer #1 certificate SHA-256 digest: ac14a000302b19c6ee0ca8a9f6c6c2225263115ca25994a692a3e0aee8ff79ab
+Signer #1 certificate SHA-1 digest: a8c9762d2cf37bde05cb4ad6525d8a1200d93d55
+Signer #1 certificate MD5 digest: 86c1e9b00a1b1e0d72dbcb090cadb306
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: e047e493b0e0c37644cda27820947ce6a3f9d5367d46b4be48be74d77a412679
+Signer #1 public key SHA-1 digest: e30229e68c1b2c20e4d64de1e4d246894fcf14f9
+Signer #1 public key MD5 digest: 2b281797fcaef5f9b6996b043bd6089a

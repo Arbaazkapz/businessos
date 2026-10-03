@@ -8,6 +8,7 @@ import '../../data/repositories.dart';
 import '../../providers/app_providers.dart';
 import '../widgets/common_widgets.dart';
 import 'calculator_screen.dart';
+import 'history_screen.dart';
 import 'customers/add_edit_customer_screen.dart';
 import 'customers/customer_detail_screen.dart';
 import 'invoices/create_invoice_screen.dart';
@@ -33,43 +34,60 @@ class DashboardScreen extends ConsumerWidget {
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                strings.t('quick_add_title'),
-                style: Theme.of(ctx).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              _ToolTile(
-                icon: Icons.sticky_note_2_outlined,
-                label: strings.t('notepad_title'),
-                color: Colors.amber.shade700,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NotepadScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _ToolTile(
-                icon: Icons.calculate_outlined,
-                label: strings.t('calculator_title'),
-                color: Colors.blue.shade600,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CalculatorScreen()),
-                  );
-                },
-              ),
-            ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.t('quick_add_title'),
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                _ToolTile(
+                  icon: Icons.history_rounded,
+                  label: 'History / Previous',
+                  color: Colors.teal,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ToolTile(
+                  icon: Icons.sticky_note_2_outlined,
+                  label: strings.t('notepad_title'),
+                  color: Colors.amber.shade700,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotepadScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ToolTile(
+                  icon: Icons.calculate_outlined,
+                  label: strings.t('calculator_title'),
+                  color: Colors.blue.shade600,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CalculatorScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

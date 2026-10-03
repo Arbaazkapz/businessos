@@ -181,6 +181,12 @@ class AppDatabase extends _$AppDatabase {
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await customStatement('PRAGMA busy_timeout = 5000');
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS ledger_entry_date ON ledger_entries(entry_date)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS invoice_date ON invoices(invoice_date)',
+      );
     },
   );
 

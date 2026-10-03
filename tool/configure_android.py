@@ -15,6 +15,8 @@ for manifest in (android / 'app/src').glob('*/AndroidManifest.xml'):
             if f'android.permission.{permission}' not in text:
                 text = re.sub(r'(<manifest[^>]*>)', r'\1\n    <uses-permission android:name="android.permission.' + permission + '" />', text, count=1)
         text = re.sub(r'\s+android:allowBackup="[^"]*"', '', text)
+        if 'android:resizeableActivity=' not in text:
+            text = text.replace('android:exported="true"', 'android:exported="true" android:resizeableActivity="true"')
         text = text.replace('<application', '<application android:allowBackup="false"', 1)
     manifest.write_text(text)
 for activity in (android / 'app/src/main').rglob('MainActivity.kt'):
@@ -26,7 +28,8 @@ text = gradle.read_text()
 if 'id("org.jetbrains.kotlin.android")' not in text:
     text = text.replace('id("com.android.application")', 'id("com.android.application")\n    id("org.jetbrains.kotlin.android")', 1)
 text = re.sub(r'compileSdk = .*', 'compileSdk = 36', text)
-text = re.sub(r'minSdk = .*', 'minSdk = 23', text)
+text = re.sub(r'minSdk = .*', 'minSdk = 24', text)
+text = re.sub(r'targetSdk = .*', 'targetSdk = 36', text)
 marker = '// SHOPHISAB SIGNING'
 if marker in text: text = text.split(marker)[0]
 text += '''
@@ -61,6 +64,28 @@ gradle.write_text(text)
 properties = android / 'gradle.properties'
 config = properties.read_text()
 config = re.sub(r'org.gradle.jvmargs=.*', 'org.gradle.jvmargs=-Xmx3G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError', config)
+if 'org.gradle.workers.max=' not in config:
+    config += '\norg.gradle.workers.max=2\n'
 properties.write_text(config)
+root_gradle = android / 'build.gradle.kts'
+root_config = root_gradle.read_text()
+if '// SHOPHISAB LIBRARY SDK' not in root_config:
+    library_sdk = '''// SHOPHISAB LIBRARY SDK
+subprojects {
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<com.android.build.api.variant.LibraryAndroidComponentsExtension> {
+            finalizeDsl { library ->
+                library.compileSdk = maxOf(library.compileSdk ?: 0, 36)
+            }
+        }
+    }
+}
+
+'''
+    root_config = root_config.replace('subprojects {', library_sdk + 'subprojects {', 1)
+    root_gradle.write_text(root_config)
 shutil.copyfile(root / 'debug.keystore', android / 'app/debug.keystore')
+wrapper = android / 'gradlew'
+if wrapper.exists():
+    wrapper.chmod(wrapper.stat().st_mode | 0o111)
 print('ShopHisab Android configuration applied; application ID unchanged.')
