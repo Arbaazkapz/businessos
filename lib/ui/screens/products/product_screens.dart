@@ -1,3 +1,5 @@
+import '../../../core/validation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,12 +43,13 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               Text('Current stock: ${product.stockQty} ${product.unit}'),
               TextFormField(
                 controller: controller,
-                validator: (text) {
-                  final n = double.tryParse(text ?? '');
-                  return n == null || !n.isFinite || n <= 0
-                      ? 'Enter a positive quantity'
-                      : null;
-                },
+                inputFormatters: [DecimalInputFormatter(decimals: 3)],
+                validator: (text) => AppValidation.number(
+                  text,
+                  label: 'Quantity',
+                  positive: true,
+                  decimals: 3,
+                ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -355,13 +358,15 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Product name *'),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  AppValidation.title(v, label: 'Product name'),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _categoryCtrl,
               decoration: const InputDecoration(labelText: 'Category'),
+              validator: (v) =>
+                  AppValidation.optionalText(v, label: 'Category', max: 60),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 14),
@@ -370,6 +375,7 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
               decoration: const InputDecoration(
                 labelText: 'Barcode (optional)',
               ),
+              validator: AppValidation.barcode,
             ),
             const SizedBox(height: 20),
             Row(
@@ -377,6 +383,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _purchasePriceCtrl,
+                    inputFormatters: [DecimalInputFormatter(decimals: 2)],
+                    validator: (v) => AppValidation.number(
+                      v,
+                      label: 'Purchase price',
+                      decimals: 2,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Purchase price',
                       prefixText: '${AppFormatters.currencyCode} ',
@@ -390,6 +402,13 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _sellingPriceCtrl,
+                    inputFormatters: [DecimalInputFormatter(decimals: 2)],
+                    validator: (v) => AppValidation.number(
+                      v,
+                      label: 'Selling price',
+                      positive: true,
+                      decimals: 2,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Selling price *',
                       prefixText: '${AppFormatters.currencyCode} ',
@@ -397,9 +416,6 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    validator: (v) => (double.tryParse(v?.trim() ?? '') == null)
-                        ? 'Required'
-                        : null,
                   ),
                 ),
               ],
@@ -410,6 +426,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _stockCtrl,
+                    inputFormatters: [DecimalInputFormatter(decimals: 3)],
+                    validator: (v) => AppValidation.number(
+                      v,
+                      label: 'Stock quantity',
+                      decimals: 3,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'Current stock',
                     ),
@@ -434,6 +456,12 @@ class _AddEditProductScreenState extends ConsumerState<AddEditProductScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _lowStockCtrl,
+              inputFormatters: [DecimalInputFormatter(decimals: 3)],
+              validator: (v) => AppValidation.number(
+                v,
+                label: 'Low stock threshold',
+                decimals: 3,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Low stock alert threshold',
               ),

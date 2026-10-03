@@ -1,3 +1,5 @@
+import '../../../core/validation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,9 +46,9 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
       context: context,
       initialDate: _date,
       firstDate: DateTime(2015),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      lastDate: DateTime.now(),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null && mounted) setState(() => _date = picked);
   }
 
   Future<void> _save() async {
@@ -145,11 +147,8 @@ class _AddLedgerEntryScreenState extends ConsumerState<AddLedgerEntryScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              validator: (v) {
-                final val = double.tryParse(v?.trim() ?? '');
-                if (val == null || val <= 0) return 'Enter a valid amount';
-                return null;
-              },
+              validator: (v) => AppValidation.number(v, positive: true),
+              inputFormatters: [DecimalInputFormatter()],
             ),
             const SizedBox(height: 14),
             TextFormField(

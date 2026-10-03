@@ -97,30 +97,32 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: scheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 20),
-              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 56, color: scheme.outline),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 20),
+                FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

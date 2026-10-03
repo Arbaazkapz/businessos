@@ -102,56 +102,58 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
       child: Scaffold(
         body: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.lock_rounded, size: 48, color: scheme.primary),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Enter PIN',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _pinCtrl,
-                    autofocus: true,
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 28, letterSpacing: 12),
-                    decoration: InputDecoration(
-                      errorText: _error,
-                      counterText: '',
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_rounded, size: 48, color: scheme.primary),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Enter PIN',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    onSubmitted: (_) => _submitPin(),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _checking ? null : _submitPin,
-                    child: _checking
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Unlock'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: _checking ? null : _tryBiometric,
-                    icon: const Icon(Icons.fingerprint),
-                    label: const Text('Use fingerprint / face unlock'),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _pinCtrl,
+                      autofocus: true,
+                      obscureText: true,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 28, letterSpacing: 12),
+                      decoration: InputDecoration(
+                        errorText: _error,
+                        counterText: '',
+                      ),
+                      onSubmitted: (_) => _submitPin(),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _checking ? null : _submitPin,
+                      child: _checking
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Unlock'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _checking ? null : _tryBiometric,
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Use fingerprint / face unlock'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -214,8 +216,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       appBar: AppBar(title: const Text('Set PIN lock')),
       body: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             Text(
               'Choose a 4-6 digit PIN to lock ShopHisab.',
