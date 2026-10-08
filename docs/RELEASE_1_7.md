@@ -50,3 +50,11 @@ Official compatibility references reviewed:
 https://developer.android.com/develop/ui/views/layout/support-multi-window-mode
 https://developer.android.com/about/versions/17/behavior-changes-all
 https://developer.android.com/guide/practices/page-sizes
+
+## 1.8.1 - History export
+
+* History cards redesigned (colour-coded sales / credit / received).
+* "Download PDF / Excel" button: choose any period (or This/Last financial year)
+  and share a statement with a CA. PDF uses the embedded Noto Sans font so the
+  rupee sign renders; Excel has Summary, Day-wise and Transactions sheets.
+* New dependency: excel ^5.0.0.

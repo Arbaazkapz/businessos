@@ -1,7 +1,7 @@
 name: businessos
 description: "ShopHisab - offline-first business management app for shopkeepers. Your Shop. Your Data. Always Available."
 publish_to: 'none'
-version: 1.8.0+4
+version: 1.8.1+5
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -26,6 +26,9 @@ dependencies:
   # Invoice PDF generation, preview, print & share
   pdf: ^3.13.0
   printing: ^5.15.0
+
+  # Excel (.xlsx) export of History for the owner / CA
+  excel: ^5.0.0
 
   # Sharing arbitrary files (encrypted backup export)
   share_plus: ^12.0.2
