@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/formatters.dart';
 import '../../data/history_repository.dart';
 import '../../providers/app_providers.dart';
+import 'history_export_sheet.dart';
 import 'invoices/invoice_preview_screen.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -99,7 +101,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showHistoryExportSheet(
+          context,
+          initialFirst: _first,
+          initialLast: _last,
+        ),
+        icon: const Icon(Icons.download_rounded),
+        label: const Text('Download PDF / Excel'),
+      ),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 96),
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -183,71 +196,33 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               final sales = days.fold<double>(0, (a, d) => a + d.sales);
               final credit = days.fold<double>(0, (a, d) => a + d.credit);
               final received = days.fold<double>(0, (a, d) => a + d.received);
+              final records = days.fold<int>(0, (a, d) => a + d.records);
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Period total',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 6),
-                          Text('Invoice sales: ${AppFormatters.money(sales)}'),
-                          Text('Credit given: ${AppFormatters.money(credit)}'),
-                          Text(
-                              'Money received: ${AppFormatters.money(received)}'),
-                        ],
+                  _PeriodSummary(
+                    sales: sales,
+                    credit: credit,
+                    received: received,
+                    records: records,
+                    days: days.length,
+                  ),
+                  ...days.map(
+                    (day) => _DayCard(
+                      day: day,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => HistoryDayScreen(day: day.date),
+                        ),
                       ),
                     ),
                   ),
-                  ...days.map((day) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: ListTile(
-                        title: Text(AppFormatters.date(day.date)),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Invoice sales: ${AppFormatters.money(day.sales)} (${day.invoiceCount})',
-                              ),
-                              Text(
-                                'Credit given: ${AppFormatters.money(day.credit)}',
-                              ),
-                              Text(
-                                'Money received: ${AppFormatters.money(day.received)}',
-                              ),
-                              Text(
-                                '${day.records} ${day.records == 1 ? 'record' : 'records'}',
-                              ),
-                            ],
-                          ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => HistoryDayScreen(day: day.date),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
                   const Padding(
-                    padding: EdgeInsets.all(12),
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Text(
                       'Sales, credit and collections are separate measures. Invoice-linked payments are counted once. Tap a day for all records.',
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -255,6 +230,268 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Colours + small widgets shared by the History screens
+// ---------------------------------------------------------------------------
+
+class _HC {
+  static const sales = Color(0xFF0E7A55);
+  static const credit = Color(0xFFD9480F);
+  static const received = Color(0xFF1C6FD1);
+  static Color forKind(String kind) => kind == 'invoice'
+      ? sales
+      : kind == 'payment'
+          ? received
+          : credit;
+}
+
+class _PeriodSummary extends StatelessWidget {
+  const _PeriodSummary({
+    required this.sales,
+    required this.credit,
+    required this.received,
+    required this.records,
+    required this.days,
+  });
+  final double sales, credit, received;
+  final int records, days;
+
+  Widget _tile(String label, double value, IconData icon) => Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 14, color: Colors.white70),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  AppFormatters.money(value),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0B5A40), Color(0xFF16A06F)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0E6E4E).withValues(alpha: 0.28),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Period total',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '$records ${records == 1 ? 'record' : 'records'} · $days ${days == 1 ? 'day' : 'days'}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _tile('Sales', sales, Icons.receipt_long_rounded),
+                _tile('Credit', credit, Icons.north_east_rounded),
+                _tile('Received', received, Icons.south_west_rounded),
+              ],
+            ),
+          ],
+        ),
+      );
+}
+
+class _DayCard extends StatelessWidget {
+  const _DayCard({required this.day, required this.onTap});
+  final HistoryDay day;
+  final VoidCallback onTap;
+
+  Widget _line(String label, String value, Color color, IconData icon) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 13, color: color),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(label, style: const TextStyle(fontSize: 13)),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Material(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 70,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0E6E4E), Color(0xFF1AA874)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('EEE').format(day.date).toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      Text(
+                        '${day.date.day}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                        ),
+                      ),
+                      Text(
+                        DateFormat('MMM yyyy').format(day.date),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _line(
+                          'Sales (${day.invoiceCount})',
+                          AppFormatters.money(day.sales),
+                          _HC.sales,
+                          Icons.receipt_long_rounded,
+                        ),
+                        _line(
+                          'Credit given',
+                          AppFormatters.money(day.credit),
+                          _HC.credit,
+                          Icons.north_east_rounded,
+                        ),
+                        _line(
+                          'Received',
+                          AppFormatters.money(day.received),
+                          _HC.received,
+                          Icons.south_west_rounded,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${day.records} ${day.records == 1 ? 'record' : 'records'}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -292,32 +529,102 @@ class _HistoryDayScreenState extends ConsumerState<HistoryDayScreen> {
                     'Invoices and ledger movements are listed separately. Do not add invoice amounts to their linked payments. History reflects current saved records, including later edits.',
                   ),
                 ),
-                ...rows.map(
-                  (r) => ListTile(
-                    leading: Icon(
-                      r.kind == 'invoice'
-                          ? Icons.receipt_long
-                          : r.kind == 'payment'
-                              ? Icons.south_west
-                              : Icons.north_east,
-                    ),
-                    title:
-                        Text('${r.title} · ${AppFormatters.money(r.amount)}'),
-                    subtitle: Text(
-                      '${r.kind.toUpperCase()} · ${AppFormatters.dateTimeStr(r.time)}\n${r.note}',
-                    ),
-                    isThreeLine: true,
-                    onTap: r.kind == 'invoice'
-                        ? () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    InvoicePreviewScreen(invoiceId: r.id),
+                ...rows.map((r) {
+                  final color = _HC.forKind(r.kind);
+                  final label = r.kind == 'invoice'
+                      ? 'Invoice sale'
+                      : r.kind == 'payment'
+                          ? 'Payment received'
+                          : 'Credit given';
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    child: Material(
+                      color: color.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(18),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: r.kind == 'invoice'
+                            ? () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        InvoicePreviewScreen(invoiceId: r.id),
+                                  ),
+                                )
+                            : null,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              left: BorderSide(color: color, width: 5),
+                            ),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: color.withValues(alpha: 0.18),
+                                foregroundColor: color,
+                                child: Icon(
+                                  r.kind == 'invoice'
+                                      ? Icons.receipt_long_rounded
+                                      : r.kind == 'payment'
+                                          ? Icons.south_west_rounded
+                                          : Icons.north_east_rounded,
+                                ),
                               ),
-                            )
-                        : null,
-                  ),
-                ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      r.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$label · ${DateFormat('hh:mm a').format(r.time)}',
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (r.note.trim().isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          r.note,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppFormatters.money(r.amount),
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 if (all.length > _limit)
                   Padding(
                     padding: const EdgeInsets.all(16),

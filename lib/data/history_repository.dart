@@ -30,6 +30,23 @@ class HistoryRecord {
   final DateTime time;
 }
 
+/// One flat transaction line used by the PDF / Excel export.
+class ExportRow {
+  const ExportRow({
+    required this.time,
+    required this.kind,
+    required this.reference,
+    required this.details,
+    required this.amount,
+    required this.sales,
+    required this.credit,
+    required this.received,
+  });
+  final DateTime time;
+  final String kind, reference, details;
+  final double amount, sales, credit, received;
+}
+
 class HistoryRepository {
   HistoryRepository(this.db);
   final AppDatabase db;
@@ -110,4 +127,37 @@ class HistoryRepository {
             )
             .toList(),
       );
+
+  /// Every transaction between [start] (inclusive) and [endExclusive],
+  /// oldest first. Used by the PDF / Excel export (no row limit).
+  Future<List<ExportRow>> fetchExportRows(
+    DateTime start,
+    DateTime endExclusive,
+  ) async {
+    final rows = await db
+        .customSelect(
+          '''
+    WITH events AS ($events) SELECT * FROM events ORDER BY occurred ASC, kind, id
+  ''',
+          variables: _bounds(start, endExclusive),
+          readsFrom: {db.invoices, db.ledgerEntries, db.customers},
+        )
+        .get();
+    return rows
+        .map(
+          (r) => ExportRow(
+            time: DateTime.fromMillisecondsSinceEpoch(
+              r.read<int>('occurred') * 1000,
+            ),
+            kind: r.read<String>('kind'),
+            reference: r.read<String>('title'),
+            details: r.read<String>('note'),
+            amount: r.read<double>('amount'),
+            sales: r.read<double>('sales'),
+            credit: r.read<double>('credit'),
+            received: r.read<double>('received'),
+          ),
+        )
+        .toList();
+  }
 }
