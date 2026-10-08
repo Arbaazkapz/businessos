@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:excel/excel.dart' as xl;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -11,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../core/formatters.dart';
 import '../data/app_database.dart';
 import '../data/history_repository.dart';
+import 'simple_xlsx.dart';
 
 /// Builds the History statement as a PDF or an Excel workbook, entirely
 /// on-device, and hands it to the Android share sheet (WhatsApp, e-mail,
@@ -311,152 +311,131 @@ class HistoryExportService {
     required DateTime first,
     required DateTime last,
   }) {
-    final book = xl.Excel.createExcel();
-    final summary = book['Summary'];
-    final daily = book['Day-wise'];
-    final tx = book['Transactions'];
-    book.delete('Sheet1');
-
-    final head = xl.CellStyle(
-      bold: true,
-      fontColorHex: xl.ExcelColor.fromHexString('FFFFFFFF'),
-      backgroundColorHex: xl.ExcelColor.fromHexString('FF0E6E4E'),
-      horizontalAlign: xl.HorizontalAlign.Center,
-    );
-    final bold = xl.CellStyle(bold: true);
-    final money = xl.CellStyle(numberFormat: xl.NumFormat.standard_2);
-    final moneyBold =
-        xl.CellStyle(bold: true, numberFormat: xl.NumFormat.standard_2);
-
-    void put(xl.Sheet s, int c, int r, xl.CellValue v, [xl.CellStyle? st]) {
-      final cell =
-          s.cell(xl.CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r));
-      cell.value = v;
-      if (st != null) cell.cellStyle = st;
-    }
-
-    xl.CellValue text(String s) => xl.TextCellValue(s);
-    xl.CellValue dbl(double v) => xl.DoubleCellValue(v);
-
     final totals = _totals(rows);
     final days = _daily(rows);
 
+    XCell h(String s) => XCell(s, XStyle.header);
+    XCell b(String s) => XCell(s, XStyle.bold);
+    XCell t(String s) => XCell(s);
+    XCell m(double v) => XCell(v, XStyle.money);
+    XCell mb(double v) => XCell(v, XStyle.moneyBold);
+
     // --- Summary sheet
-    var r = 0;
-    put(summary, 0, r++, text(business?.businessName ?? 'ShopHisab'), bold);
+    final summary = XSheet('Summary');
+    summary.addRow([b(business?.businessName ?? 'ShopHisab')]);
     if (business != null && business.address.isNotEmpty) {
-      put(summary, 0, r++, text(business.address));
+      summary.addRow([t(business.address)]);
     }
     if (business != null && business.phone.isNotEmpty) {
-      put(summary, 0, r++, text('Phone: ${business.phone}'));
+      summary.addRow([t('Phone: ${business.phone}')]);
     }
     if (business != null && (business.gstNumber ?? '').trim().isNotEmpty) {
-      put(summary, 0, r++, text('GSTIN: ${business.gstNumber}'));
+      summary.addRow([t('GSTIN: ${business.gstNumber}')]);
     }
-    r++;
-    put(summary, 0, r, text('Period'), bold);
-    put(summary, 1, r++,
-        text('${AppFormatters.date(first)} to ${AppFormatters.date(last)}'));
-    put(summary, 0, r, text('Generated'), bold);
-    put(summary, 1, r++, text(AppFormatters.dateTimeStr(DateTime.now())));
-    put(summary, 0, r, text('Currency'), bold);
-    put(summary, 1, r++, text(AppFormatters.currencyCode));
-    r++;
-    put(summary, 0, r, text('Measure'), head);
-    put(summary, 1, r++, text('Amount'), head);
-    put(summary, 0, r, text('Invoice sales'));
-    put(summary, 1, r++, dbl(totals.sales), money);
-    put(summary, 0, r, text('Credit given'));
-    put(summary, 1, r++, dbl(totals.credit), money);
-    put(summary, 0, r, text('Money received'));
-    put(summary, 1, r++, dbl(totals.received), money);
-    put(summary, 0, r, text('Number of records'));
-    put(summary, 1, r++, xl.IntCellValue(rows.length));
-    r++;
-    put(
-      summary,
-      0,
-      r,
-      text(
+    summary.addRow([]);
+    summary.addRow([
+      b('Period'),
+      t('${AppFormatters.date(first)} to ${AppFormatters.date(last)}'),
+    ]);
+    summary.addRow([
+      b('Generated'),
+      t(AppFormatters.dateTimeStr(DateTime.now())),
+    ]);
+    summary.addRow([b('Currency'), t(AppFormatters.currencyCode)]);
+    summary.addRow([]);
+    summary.addRow([h('Measure'), h('Amount')]);
+    summary.addRow([t('Invoice sales'), m(totals.sales)]);
+    summary.addRow([t('Credit given'), m(totals.credit)]);
+    summary.addRow([t('Money received'), m(totals.received)]);
+    summary.addRow([t('Number of records'), XCell(rows.length)]);
+    summary.addRow([]);
+    summary.addRow([
+      t(
         'Sales, credit and collections are separate measures. Payments linked to an invoice are counted once.',
       ),
-    );
-    summary.setColumnWidth(0, 28);
-    summary.setColumnWidth(1, 30);
+    ]);
+    summary.columnWidths[0] = 28;
+    summary.columnWidths[1] = 32;
 
     // --- Day-wise sheet
-    const dHead = [
-      'Date',
-      'Records',
-      'Invoice sales',
-      'Credit given',
-      'Money received',
-    ];
-    for (var c = 0; c < dHead.length; c++) {
-      put(daily, c, 0, text(dHead[c]), head);
-    }
-    var dr = 1;
+    final daily = XSheet('Day-wise', freezeHeader: true);
+    daily.addRow([
+      h('Date'),
+      h('Records'),
+      h('Invoice sales'),
+      h('Credit given'),
+      h('Money received'),
+    ]);
     for (final d in days) {
-      put(daily, 0, dr, xl.DateCellValue.fromDateTime(d.date));
-      put(daily, 1, dr, xl.IntCellValue(d.records));
-      put(daily, 2, dr, dbl(d.sales), money);
-      put(daily, 3, dr, dbl(d.credit), money);
-      put(daily, 4, dr, dbl(d.received), money);
-      dr++;
+      daily.addRow([
+        XCell(d.date, XStyle.date),
+        XCell(d.records),
+        m(d.sales),
+        m(d.credit),
+        m(d.received),
+      ]);
     }
-    put(daily, 0, dr, text('TOTAL'), bold);
-    put(daily, 1, dr, xl.IntCellValue(rows.length), bold);
-    put(daily, 2, dr, dbl(totals.sales), moneyBold);
-    put(daily, 3, dr, dbl(totals.credit), moneyBold);
-    put(daily, 4, dr, dbl(totals.received), moneyBold);
-    for (var c = 0; c < dHead.length; c++) {
-      daily.setColumnWidth(c, c == 0 ? 16 : 18);
-    }
+    daily.addRow([
+      b('TOTAL'),
+      XCell(rows.length, XStyle.bold),
+      mb(totals.sales),
+      mb(totals.credit),
+      mb(totals.received),
+    ]);
+    daily.columnWidths.addAll({0: 16, 1: 12, 2: 18, 3: 18, 4: 18});
 
     // --- Transactions sheet
-    const tHead = [
-      'Date',
-      'Time',
-      'Type',
-      'Reference / customer',
-      'Details',
-      'Amount',
-      'Invoice sales',
-      'Credit given',
-      'Money received',
-    ];
-    for (var c = 0; c < tHead.length; c++) {
-      put(tx, c, 0, text(tHead[c]), head);
-    }
-    var tr = 1;
+    final tx = XSheet('Transactions', freezeHeader: true);
+    tx.addRow([
+      h('Date'),
+      h('Time'),
+      h('Type'),
+      h('Reference / customer'),
+      h('Details'),
+      h('Amount'),
+      h('Invoice sales'),
+      h('Credit given'),
+      h('Money received'),
+    ]);
     for (final x in rows) {
       final hh = x.time.hour.toString().padLeft(2, '0');
       final mm = x.time.minute.toString().padLeft(2, '0');
-      put(tx, 0, tr, xl.DateCellValue.fromDateTime(x.time));
-      put(tx, 1, tr, text('$hh:$mm'));
-      put(tx, 2, tr, text(kindLabel(x.kind)));
-      put(tx, 3, tr, text(x.reference));
-      put(tx, 4, tr, text(x.details));
-      put(tx, 5, tr, dbl(x.amount), money);
-      put(tx, 6, tr, dbl(x.sales), money);
-      put(tx, 7, tr, dbl(x.credit), money);
-      put(tx, 8, tr, dbl(x.received), money);
-      tr++;
+      tx.addRow([
+        XCell(x.time, XStyle.date),
+        t('$hh:$mm'),
+        t(kindLabel(x.kind)),
+        t(x.reference),
+        t(x.details),
+        m(x.amount),
+        m(x.sales),
+        m(x.credit),
+        m(x.received),
+      ]);
     }
-    put(tx, 0, tr, text('TOTAL'), bold);
-    put(tx, 6, tr, dbl(totals.sales), moneyBold);
-    put(tx, 7, tr, dbl(totals.credit), moneyBold);
-    put(tx, 8, tr, dbl(totals.received), moneyBold);
-    const widths = [14.0, 8.0, 18.0, 28.0, 42.0, 14.0, 15.0, 15.0, 16.0];
-    for (var c = 0; c < widths.length; c++) {
-      tx.setColumnWidth(c, widths[c]);
-    }
+    tx.addRow([
+      b('TOTAL'),
+      null,
+      null,
+      null,
+      null,
+      null,
+      mb(totals.sales),
+      mb(totals.credit),
+      mb(totals.received),
+    ]);
+    tx.columnWidths.addAll({
+      0: 14,
+      1: 8,
+      2: 18,
+      3: 28,
+      4: 42,
+      5: 14,
+      6: 15,
+      7: 15,
+      8: 16,
+    });
 
-    final bytes = book.encode();
-    if (bytes == null) {
-      throw StateError('Could not build the Excel file.');
-    }
-    return Uint8List.fromList(bytes);
+    return SimpleXlsx.build([summary, daily, tx]);
   }
 
   // ---------------------------------------------------------------- Share
