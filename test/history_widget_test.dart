@@ -40,9 +40,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 record'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.byType(ListTile));
+    expect(find.text('Download PDF / Excel'), findsOneWidget);
+    await tester.ensureVisible(find.text('1 record'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(ListTile));
+    await tester.tap(find.text('1 record'));
     await tester.pumpAndSettle();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
