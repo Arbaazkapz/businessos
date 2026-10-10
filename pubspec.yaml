@@ -1,7 +1,7 @@
 name: businessos
 description: "ShopHisab - offline-first business management app for shopkeepers. Your Shop. Your Data. Always Available."
 publish_to: 'none'
-version: 1.8.2+6
+version: 1.9.0+7
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
