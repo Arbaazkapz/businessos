@@ -33,9 +33,15 @@ void main() {
       }
     },
   );
-  test('new backups reject empty or short passwords', () async {
-    await expectLater(BackupCodec.encode(bytes, ''), throwsFormatException);
+  test('short passphrases are rejected; no passphrase uses the built-in key',
+      () async {
     await expectLater(BackupCodec.encode(bytes, '1234'), throwsFormatException);
+    final encoded = await BackupCodec.encode(bytes, '');
+    expect(await BackupCodec.decode(encoded, ''), bytes);
+    // A backup made with a real passphrase cannot be opened without it.
+    final protected = await BackupCodec.encode(bytes, 'my long passphrase');
+    await expectLater(BackupCodec.decode(protected, ''), throwsFormatException);
+    expect(await BackupCodec.decode(protected, 'my long passphrase'), bytes);
   });
   test('legacy CBC backup remains readable', () async {
     final key = enc.Key(
