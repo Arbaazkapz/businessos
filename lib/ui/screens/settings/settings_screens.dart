@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/formatters.dart';
 import '../../../providers/app_providers.dart';
@@ -286,9 +287,9 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionLabel('About'),
           const ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('ShopHisab v1.7'),
+            title: Text('ShopHisab v1.9'),
             subtitle: const Text(
-              'Your Shop. Your Data. Always Available.\nWorks fully offline for everyday use - no account needed, no ads. Optional Google Drive backup available if you connect it.',
+              'Your Shop. Your Data. Always Available.\nWorks fully offline for everyday use - no account needed. Optional Google Drive backup available if you connect it.',
             ),
             isThreeLine: true,
           ),
@@ -339,10 +340,19 @@ class BackupRestoreScreen extends ConsumerStatefulWidget {
 class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   bool _busy = false;
   GoogleSignInAccount? _driveAccount;
+  static const _usePassphraseKey = 'backup_use_own_passphrase_v1';
+  // Off by default: backups run in one tap. When on, the user chooses their
+  // own passphrase for every new backup (needed again to restore).
+  bool _usePassphrase = false;
 
   @override
   void initState() {
     super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) {
+        setState(() => _usePassphrase = prefs.getBool(_usePassphraseKey) ?? false);
+      }
+    });
     if (widget.autoOpenCloudRestore) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _restoreFromDrive();
@@ -449,6 +459,41 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     }
   }
 
+  /// Passphrase for a NEW backup. Returns '' (no passphrase) unless the user
+  /// switched on "Protect backups with my own passphrase"; null = cancelled.
+  Future<String?> _passphraseForNewBackup(String title) async {
+    if (!_usePassphrase) return '';
+    return _askPassphrase(
+      title: title,
+      message:
+          'Choose a passphrase of at least 10 characters. Keep it safe: it is needed to restore and cannot be recovered.',
+      newBackup: true,
+    );
+  }
+
+  /// Restores [file]. Tries one-tap restore first; only if the backup was
+  /// protected with a personal passphrase does it ask for it.
+  /// Returns true when the data was restored.
+  Future<bool> _restoreFileSmart(File file, String backupKey) async {
+    final repo = ref.read(backupRepositoryProvider);
+    try {
+      await repo.restoreEncrypted(file, passphrase: '');
+      return true;
+    } on FormatException catch (e) {
+      if (!e.message.contains('Wrong passphrase')) rethrow;
+    }
+    final passphrase = await _askPassphrase(
+      title: 'Enter backup passphrase',
+      message:
+          'This backup is protected with a passphrase. Enter the passphrase you chose when you created it.',
+      allowBiometric: true,
+      backupKey: backupKey,
+    );
+    if (passphrase == null || !mounted) return false;
+    await repo.restoreEncrypted(file, passphrase: passphrase);
+    return true;
+  }
+
   Future<void> _finishRestore() async {
     await ref.read(lastBackupProvider.notifier).clear();
     final profile = await ref.read(businessRepositoryProvider).getProfile();
@@ -463,11 +508,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
   Future<void> _export() async {
     if (_busy) return;
-    final passphrase = await _askPassphrase(
-      title: 'Secure your backup',
-      message: 'Choose a separate passphrase of at least 10 characters. Keep it safe: it is needed on a new phone and cannot be recovered.',
-      newBackup: true,
-    );
+    final passphrase = await _passphraseForNewBackup('Secure your backup');
     if (passphrase == null || !mounted) return;
 
     setState(() => _busy = true);
@@ -475,14 +516,16 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       final file = await ref
           .read(backupRepositoryProvider)
           .exportEncrypted(passphrase: passphrase);
-      await ref
-          .read(authRepositoryProvider)
-          .saveBackupPassphrase(p.basename(file.path), passphrase);
+      if (passphrase.isNotEmpty) {
+        await ref
+            .read(authRepositoryProvider)
+            .saveBackupPassphrase(p.basename(file.path), passphrase);
+      }
       final shareResult = await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
           subject: 'ShopHisab Backup',
-          text: 'ShopHisab encrypted backup - keep this file and your passphrase safe.',
+          text: 'ShopHisab encrypted backup - keep this file safe.',
         ),
       );
       if (shareResult.status == ShareResultStatus.success) {
@@ -490,7 +533,9 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         if (mounted)
           showSuccessSnack(
             context,
-            'Backup shared. Keep the file and passphrase safe.',
+            passphrase.isEmpty
+                ? 'Backup shared. Keep the file safe.'
+                : 'Backup shared. Keep the file and passphrase safe.',
           );
       } else if (mounted) {
         showSuccessSnack(
@@ -538,22 +583,14 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     final result = await FilePicker.platform.pickFiles(type: FileType.any);
     if (result == null || result.files.single.path == null) return;
 
-    final passphrase = await _askPassphrase(
-      title: 'Enter backup passphrase',
-      message:
-          'Enter the PIN or passphrase you used when this backup was created.',
-      allowBiometric: true,
-      backupKey: p.basename(result.files.single.path!),
-    );
-    if (passphrase == null || !mounted) return;
-
     setState(() => _busy = true);
     try {
       final backupFile = File(result.files.single.path!);
-      await ref
-          .read(backupRepositoryProvider)
-          .restoreEncrypted(backupFile, passphrase: passphrase);
-      if (!mounted) return;
+      final restored = await _restoreFileSmart(
+        backupFile,
+        p.basename(backupFile.path),
+      );
+      if (!restored || !mounted) return;
       await _finishRestore();
     } catch (e) {
       if (mounted) {
@@ -603,11 +640,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     if (_driveAccount == null && !await _connectDrive()) return;
 
     if (_busy) return;
-    final passphrase = await _askPassphrase(
-      title: 'Secure your Drive backup',
-      message: 'Choose a separate passphrase of at least 10 characters. Keep it safe: it is needed on a new phone and cannot be recovered.',
-      newBackup: true,
-    );
+    final passphrase = await _passphraseForNewBackup('Secure your Drive backup');
     if (passphrase == null || !mounted) return;
 
     setState(() => _busy = true);
@@ -625,9 +658,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
             fileBytes: bytes,
             fileName: fileName,
           );
-      await ref
-          .read(authRepositoryProvider)
-          .saveBackupPassphrase(fileName, passphrase);
+      if (passphrase.isNotEmpty) {
+        await ref
+            .read(authRepositoryProvider)
+            .saveBackupPassphrase(fileName, passphrase);
+      }
       if (mounted) showSuccessSnack(context, 'Backed up to Google Drive');
       await ref.read(lastBackupProvider.notifier).markBackedUpNow();
     } catch (e) {
@@ -715,15 +750,6 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         false;
     if (!confirmed || !mounted) return;
 
-    final passphrase = await _askPassphrase(
-      title: 'Enter backup passphrase',
-      message:
-          'Enter the PIN or passphrase you used when this backup was created.',
-      allowBiometric: true,
-      backupKey: picked.name,
-    );
-    if (passphrase == null || !mounted) return;
-
     setState(() => _busy = true);
     try {
       final bytes = await ref
@@ -732,11 +758,13 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(p.join(tempDir.path, 'drive_restore_temp.bosb'));
       await tempFile.writeAsBytes(bytes);
-      await ref
-          .read(backupRepositoryProvider)
-          .restoreEncrypted(tempFile, passphrase: passphrase);
-      if (await tempFile.exists()) await tempFile.delete();
-      if (!mounted) return;
+      bool restored;
+      try {
+        restored = await _restoreFileSmart(tempFile, picked.name);
+      } finally {
+        if (await tempFile.exists()) await tempFile.delete();
+      }
+      if (!restored || !mounted) return;
       await _finishRestore();
     } catch (e) {
       if (mounted) {
@@ -794,6 +822,24 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                     loading: () => const SizedBox.shrink(),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Protect backups with my own passphrase'),
+                subtitle: Text(
+                  _usePassphrase
+                      ? 'On: you choose a passphrase for each backup and need it to restore. It cannot be recovered if forgotten.'
+                      : 'Off: backup and restore work in one tap. Drive backups stay in your private Google Drive app folder.',
+                ),
+                value: _usePassphrase,
+                onChanged: _busy
+                    ? null
+                    : (v) async {
+                        setState(() => _usePassphrase = v);
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool(_usePassphraseKey, v);
+                      },
+              ),
               SectionHeader('Local backup'),
               FilledButton.icon(
                 onPressed: _busy ? null : _export,

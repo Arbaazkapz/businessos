@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/app_database.dart';
 import '../../../providers/app_providers.dart';
 import '../../widgets/common_widgets.dart';
+import 'contact_import_screen.dart';
 
 class AddEditCustomerScreen extends ConsumerStatefulWidget {
   const AddEditCustomerScreen({super.key, this.existing});
@@ -103,6 +104,15 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     }
   }
 
+  Future<void> _importFromContacts() async {
+    final imported = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (_) => const ContactImportScreen()),
+    );
+    // Contacts were saved as customers: this form is no longer needed.
+    if (imported != null && imported > 0 && mounted) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +124,17 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
           children: [
+            if (!_isEditing) ...[
+              OutlinedButton.icon(
+                onPressed: _saving ? null : _importFromContacts,
+                icon: const Icon(Icons.contacts_outlined),
+                label: const Text('Import from contacts'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextFormField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Full name *'),
@@ -128,8 +149,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
               validator: (v) => AppValidation.phone(v),
               inputFormatters: [PhoneInputFormatter()],
               decoration: const InputDecoration(
-                labelText: 'Phone number',
-                helperText: 'India: 10 digits. International: +country code.',
+                labelText: 'Phone number (optional)',
+                helperText:
+                    'Not required. India: 10 digits. International: +country code.',
               ),
               keyboardType: TextInputType.phone,
             ),

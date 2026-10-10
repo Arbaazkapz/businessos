@@ -51,6 +51,9 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   final _taxCtrl = TextEditingController(text: '0');
   final _amountPaidCtrl = TextEditingController(text: '0');
   final _notesCtrl = TextEditingController();
+  // true = the discount box holds a percentage of the items total,
+  // false = it holds a direct cash amount.
+  bool _discountIsPercent = false;
 
   String? _customerId;
   String _customerName = 'Walk-in Customer';
@@ -72,7 +75,14 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   double get _subtotal => _lines.fold(0.0, (a, l) => a + l.lineTotal);
-  double get _discount => double.tryParse(_discountCtrl.text.trim()) ?? 0;
+  double get _discountInput => double.tryParse(_discountCtrl.text.trim()) ?? 0;
+
+  /// The discount in money, whichever way the user entered it.
+  double get _discount {
+    if (!_discountIsPercent) return _discountInput;
+    final pct = _discountInput.clamp(0, 100).toDouble();
+    return (_subtotal * pct / 100 * 100).roundToDouble() / 100;
+  }
   double get _taxPercent => double.tryParse(_taxCtrl.text.trim()) ?? 0;
   double get _afterDiscount =>
       (_subtotal - _discount) < 0 ? 0 : _subtotal - _discount;
@@ -384,17 +394,49 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                     controller: _discountCtrl,
                     inputFormatters: [DecimalInputFormatter(decimals: 2)],
                     validator: (v) {
-                      final base =
-                          AppValidation.number(v, label: 'Discount');
+                      final base = AppValidation.number(
+                        v,
+                        label: 'Discount',
+                        max: _discountIsPercent ? 100.0 : 1000000000000.0,
+                      );
                       if (base != null) return base;
-                      if ((double.tryParse(v!.trim()) ?? 0) > _subtotal) {
+                      final n = double.tryParse(v!.trim()) ?? 0;
+                      if (_discountIsPercent && n > 100) {
+                        return 'Discount cannot exceed 100%.';
+                      }
+                      if (!_discountIsPercent && n > _subtotal) {
                         return 'Discount cannot exceed the subtotal.';
                       }
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: 'Discount',
-                      prefixText: '${AppFormatters.currencyCode} ',
+                      labelText: _discountIsPercent
+                          ? 'Discount (% of items total)'
+                          : 'Discount (cash)',
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<bool>(
+                            value: _discountIsPercent,
+                            isDense: true,
+                            items: [
+                              DropdownMenuItem(
+                                value: false,
+                                child: Text(AppFormatters.currencyCode),
+                              ),
+                              const DropdownMenuItem(
+                                value: true,
+                                child: Text('%'),
+                              ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() => _discountIsPercent = v);
+                              _formKey.currentState?.validate();
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -505,7 +547,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                 child: Column(
                   children: [
                     _SummaryRow('Subtotal', _subtotal),
-                    _SummaryRow('Discount', -_discount),
+                    _SummaryRow(
+                      _discountIsPercent
+                          ? 'Discount (${_discountInput.toStringAsFixed(_discountInput % 1 == 0 ? 0 : 2)}%)'
+                          : 'Discount',
+                      -_discount,
+                    ),
                     _SummaryRow('Tax', _taxAmount),
                     const Divider(),
                     _SummaryRow('Total', _total, bold: true),
@@ -660,7 +707,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                     ...filtered.map(
                       (c) => ListTile(
                         title: Text(c.name),
-                        subtitle: Text(c.phone),
+                        subtitle: Text(c.phone.isEmpty ? 'No phone number' : c.phone),
                         onTap: () => Navigator.pop(context, c),
                       ),
                     ),

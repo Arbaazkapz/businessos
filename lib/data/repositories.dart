@@ -773,7 +773,8 @@ class BackupRepository {
 
   Future<File> exportEncrypted({required String passphrase}) =>
       _exclusive(() async {
-        if (passphrase.trim().length < 10) {
+        // Empty = no passphrase (built-in key); otherwise at least 10 chars.
+        if (passphrase.trim().isNotEmpty && passphrase.trim().length < 10) {
           throw const FormatException(
             'Use a backup passphrase of at least 10 characters.',
           );

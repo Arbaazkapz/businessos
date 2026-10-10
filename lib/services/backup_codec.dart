@@ -25,6 +25,15 @@ class BackupCodec {
   static const iterations = 210000;
   static final _magic = utf8.encode('SHOPHB02');
 
+  /// Used when the user does not choose their own passphrase, so a backup can
+  /// be restored on any phone with one tap. Backups made this way are still
+  /// AES-256-GCM encrypted, but the key is built into the app: protection then
+  /// comes from the private Google Drive app folder, not from a secret.
+  static const defaultPassphrase = 'ShopHisab::built-in-backup-key::v1';
+
+  static String _effective(String password) =>
+      password.trim().isEmpty ? defaultPassphrase : password;
+
   static Future<SecretKey> _key(String password, List<int> salt) => Pbkdf2(
     macAlgorithm: Hmac.sha256(),
     iterations: iterations,
@@ -32,11 +41,13 @@ class BackupCodec {
   ).deriveKey(secretKey: SecretKey(utf8.encode(password)), nonce: salt);
 
   static Future<Uint8List> encode(List<int> bytes, String password) async {
-    if (password.trim().length < 10) {
+    // An empty passphrase means "no passphrase": use the built-in key.
+    if (password.trim().isNotEmpty && password.trim().length < 10) {
       throw const FormatException(
         'Use a backup passphrase of at least 10 characters.',
       );
     }
+    final secret = _effective(password);
     if (bytes.length > maxBytes - 1024) {
       throw const FormatException(
         'This backup exceeds the supported 64 MB limit.',
@@ -47,7 +58,7 @@ class BackupCodec {
     final header = [..._magic, ...salt];
     final box = await cipher.encrypt(
       bytes,
-      secretKey: await _key(password, salt),
+      secretKey: await _key(secret, salt),
       aad: header,
     );
     return Uint8List.fromList([
@@ -75,7 +86,7 @@ class BackupCodec {
         return Uint8List.fromList(
           await AesGcm.with256bits().decrypt(
             box,
-            secretKey: await _key(password, bytes.sublist(8, 24)),
+            secretKey: await _key(_effective(password), bytes.sublist(8, 24)),
             aad: bytes.sublist(0, 24),
           ),
         );
