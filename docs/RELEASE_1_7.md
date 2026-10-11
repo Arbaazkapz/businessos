@@ -69,3 +69,9 @@ https://developer.android.com/guide/practices/page-sizes
 * Removed the "no ads" wording from About.
 * NOTE for Google Play: READ_CONTACTS is a sensitive permission; complete the
   Permissions Declaration form and keep the in-app explanation text.
+
+## 1.9.1
+* Fix: changing the discount type no longer validates the whole invoice form
+  (item description was turning red).
+* Home: large "+" button (bottom right) opens a Keep-style speed dial with
+  History / Notepad / Calculator; the small "+" beside the date was removed.
