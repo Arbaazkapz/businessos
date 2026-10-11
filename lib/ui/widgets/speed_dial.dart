@@ -38,7 +38,12 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
     if (_open) return;
     final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
-    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    // Position relative to the navigator, so it stays correct when the app
+    // is shown in a centred column on wide screens.
+    final navBox =
+        Navigator.of(context, rootNavigator: true).context.findRenderObject()
+            as RenderBox?;
+    final anchor = box.localToGlobal(Offset.zero, ancestor: navBox) & box.size;
     setState(() => _open = true);
     final picked = await showGeneralDialog<SpeedDialItem>(
       context: context,
@@ -155,7 +160,6 @@ class _SpeedDialLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final scheme = Theme.of(context).colorScheme;
     // Farthest item first (top), nearest to the button last (bottom).
     final ordered = <Widget>[
@@ -163,7 +167,9 @@ class _SpeedDialLayer extends StatelessWidget {
     ];
     return Material(
       type: MaterialType.transparency,
-      child: Stack(
+      child: LayoutBuilder(builder: (context, box) {
+        final size = box.biggest;
+        return Stack(
         children: [
           Positioned(
             right: size.width - anchor.right,
@@ -199,7 +205,8 @@ class _SpeedDialLayer extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      );
+      }),
     );
   }
 }

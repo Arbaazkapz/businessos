@@ -1,0 +1,5 @@
+Roboto (Regular, Medium, Bold) - Copyright 2011 Google Inc.
+Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+Source: https://github.com/googlefonts/roboto-2
+Bundled so ShopHisab looks identical on every phone, even when the phone
+maker replaces the system font.

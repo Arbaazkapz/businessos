@@ -37,6 +37,7 @@ class AppTheme {
   static ThemeData _base(ColorScheme scheme) {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Roboto',
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
       cardTheme: CardThemeData(

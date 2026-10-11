@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -230,13 +232,19 @@ class DashboardScreen extends ConsumerWidget {
             SectionHeader(
               '${strings.t('dashboard_today')} - ${AppFormatters.date(DateTime.now())}',
             ),
-            GridView.count(
+            LayoutBuilder(builder: (context, box) {
+              // Same look as before (ratio 1.35), but never shorter than the
+              // content needs - narrow screens and big fonts get taller cards.
+              final cardW = (box.maxWidth - 12) / 2;
+              final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+              final cardH = math.max(cardW / 1.35, 128 * textScale);
+              return GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.35,
+              childAspectRatio: cardW / cardH,
               children: [
                 DashboardStatCard(
                   label: strings.t('dashboard_collections'),
@@ -281,7 +289,8 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
+            );
+            }),
             SectionHeader(strings.t('dashboard_quick_actions')),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -434,7 +443,7 @@ class _QuickAction extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           width: 100,
-          height: 100,
+          height: 100 * math.max(1.0, MediaQuery.textScalerOf(context).scale(12) / 12),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             child: Column(

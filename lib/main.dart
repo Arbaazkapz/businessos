@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme.dart';
+import 'ui/widgets/adaptive_frame.dart';
 import 'providers/app_providers.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/pin_screens.dart';
@@ -73,6 +74,8 @@ class _ShopHisabAppState extends ConsumerState<ShopHisabApp>
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      builder: (context, child) =>
+          AdaptiveFrame(child: child ?? const SizedBox.shrink()),
       home: const SplashScreen(),
     );
   }

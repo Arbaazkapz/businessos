@@ -53,7 +53,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        labelBehavior: MediaQuery.sizeOf(context).width < 400
+        labelBehavior: MediaQuery.sizeOf(context).width < 340
             ? NavigationDestinationLabelBehavior.onlyShowSelected
             : NavigationDestinationLabelBehavior.alwaysShow,
         onDestinationSelected: _goToTab,
