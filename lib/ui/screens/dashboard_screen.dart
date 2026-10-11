@@ -7,6 +7,7 @@ import '../../data/app_database.dart';
 import '../../data/repositories.dart';
 import '../../providers/app_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/speed_dial.dart';
 import 'calculator_screen.dart';
 import 'history_screen.dart';
 import 'customers/add_edit_customer_screen.dart';
@@ -27,71 +28,6 @@ class DashboardScreen extends ConsumerWidget {
     if (hour < 12) return 'greeting_morning';
     if (hour < 17) return 'greeting_afternoon';
     return 'greeting_evening';
-  }
-
-  Future<void> _showQuickTools(BuildContext context, AppStrings strings) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.t('quick_add_title'),
-                  style: Theme.of(ctx).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                _ToolTile(
-                  icon: Icons.history_rounded,
-                  label: 'History / Previous',
-                  color: Colors.teal,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _ToolTile(
-                  icon: Icons.sticky_note_2_outlined,
-                  label: strings.t('notepad_title'),
-                  color: Colors.amber.shade700,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const NotepadScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _ToolTile(
-                  icon: Icons.calculate_outlined,
-                  label: strings.t('calculator_title'),
-                  color: Colors.blue.shade600,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CalculatorScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -162,6 +98,35 @@ class DashboardScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      floatingActionButton: SpeedDialFab(
+        tooltip: strings.t('quick_add_title'),
+        items: [
+          SpeedDialItem(
+            icon: Icons.history_rounded,
+            label: 'History / Previous',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+          ),
+          SpeedDialItem(
+            icon: Icons.sticky_note_2_outlined,
+            label: strings.t('notepad_title'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotepadScreen()),
+            ),
+          ),
+          SpeedDialItem(
+            icon: Icons.calculate_outlined,
+            label: strings.t('calculator_title'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CalculatorScreen()),
+            ),
+          ),
+        ],
+      ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(businessName, overflow: TextOverflow.ellipsis),
@@ -249,7 +214,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(productsProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
           children: [
             Text(
               '${strings.t(_greetingKey())}${ownerName.isNotEmpty ? ', $ownerName' : ''} 👋',
@@ -264,22 +229,6 @@ class DashboardScreen extends ConsumerWidget {
             ),
             SectionHeader(
               '${strings.t('dashboard_today')} - ${AppFormatters.date(DateTime.now())}',
-              trailing: Material(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => _showQuickTools(context, strings),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.add_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-              ),
             ),
             GridView.count(
               crossAxisCount: 2,
@@ -454,55 +403,6 @@ class DashboardScreen extends ConsumerWidget {
                 );
               }),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

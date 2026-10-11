@@ -54,6 +54,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   // true = the discount box holds a percentage of the items total,
   // false = it holds a direct cash amount.
   bool _discountIsPercent = false;
+  final _discountFieldKey = GlobalKey<FormFieldState<String>>();
 
   String? _customerId;
   String _customerName = 'Walk-in Customer';
@@ -391,6 +392,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
+                    key: _discountFieldKey,
                     controller: _discountCtrl,
                     inputFormatters: [DecimalInputFormatter(decimals: 2)],
                     validator: (v) {
@@ -410,9 +412,8 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: _discountIsPercent
-                          ? 'Discount (% of items total)'
-                          : 'Discount (cash)',
+                      labelText:
+                          _discountIsPercent ? 'Discount (%)' : 'Discount (cash)',
                       suffixIcon: Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: DropdownButtonHideUnderline(
@@ -432,7 +433,12 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                             onChanged: (v) {
                               if (v == null) return;
                               setState(() => _discountIsPercent = v);
-                              _formKey.currentState?.validate();
+                              // Re-check only the discount box, never the
+                              // whole form (that would flag empty fields red).
+                              WidgetsBinding.instance.addPostFrameCallback(
+                                (_) => _discountFieldKey.currentState
+                                    ?.validate(),
+                              );
                             },
                           ),
                         ),

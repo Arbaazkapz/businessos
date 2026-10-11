@@ -287,7 +287,7 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionLabel('About'),
           const ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('ShopHisab v1.9'),
+            title: Text('ShopHisab v1.9.1'),
             subtitle: const Text(
               'Your Shop. Your Data. Always Available.\nWorks fully offline for everyday use - no account needed. Optional Google Drive backup available if you connect it.',
             ),
