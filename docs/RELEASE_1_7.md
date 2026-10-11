@@ -75,3 +75,13 @@ https://developer.android.com/guide/practices/page-sizes
   (item description was turning red).
 * Home: large "+" button (bottom right) opens a Keep-style speed dial with
   History / Notepad / Calculator; the small "+" beside the date was removed.
+
+## 1.9.2 - adaptive design
+* Roboto bundled (assets/fonts) so typography is identical on every phone,
+  including phones whose maker replaced the system font.
+* AdaptiveFrame: text size follows the phone setting but clamped to 0.9x-1.15x;
+  screens wider than 600 dp (tablets, foldables, landscape) keep the phone
+  layout in a centred column.
+* Home stat cards never shorter than their content (no clipping on 360 dp
+  phones or with large fonts); bottom-bar labels visible down to 340 dp.
+* Speed dial positions itself relative to the navigator (works in the column).
